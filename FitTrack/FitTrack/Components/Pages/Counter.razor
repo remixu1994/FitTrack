@@ -1,0 +1,23 @@
+﻿@page "/counter"
+@inject HttpClient Http
+@inject NavigationManager nav
+<PageTitle>Counter</PageTitle>
+
+<div>
+    @HtmlContent;
+</div>
+
+@code {
+    private string HtmlContent;
+    private int currentCount = 0;
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        HtmlContent = await Http.GetStringAsync(nav.BaseUri+"bmr_tdee.html");
+    }
+}

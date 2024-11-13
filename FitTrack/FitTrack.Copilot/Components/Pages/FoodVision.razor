@@ -1,0 +1,114 @@
+﻿@page "/food-vision"
+@using FitTrack.Copilot.Abstractions.Models
+@inject IHttpClientFactory HttpClientFactory
+@inject ISnackbar Snackbar
+
+<MudPaper Class="p-6 max-w-6xl mx-auto">
+
+  <MudText Typo="Typo.h5">Image → Calories (Copilot)</MudText>
+  <MudText Class="mb-4" Color="Color.Secondary">Upload a food photo, choose provider, and get initial nutrition
+    estimates you can edit before saving.
+  </MudText>
+
+  <MudGrid Class="mb-4">
+    <MudItem xs="12" md="3">
+      <MudSelect T="string" Label="Provider (serviceId)" @bind-Value="_serviceId" Dense="true">
+        <MudSelectItem Value="@("openai")">openai</MudSelectItem>
+      </MudSelect>
+    </MudItem>
+
+    <MudItem xs="12" md="3">
+      <MudTextField @bind-Value="_modelId" Label="Model Id (optional)" Dense="true"/>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+      <MudTextField @bind-Value="_hint" Label="Hint (e.g., half bowl, plate size)" Dense="true"/>
+    </MudItem>
+  </MudGrid>
+
+  <MudGrid Class="mb-2">
+    <MudItem xs="12" md="6">
+      <MudText Typo="Typo.subtitle2">Upload image</MudText>
+      <InputFile OnChange="OnFileChange"/>
+      <MudText Class="mt-1" Color="Color.Secondary" Style="font-size: .85rem;">
+        Max recommended: 10 MB. JPG/PNG.
+      </MudText>
+    </MudItem>
+    <MudItem xs="12" md="6">
+      @if (_previewDataUrl is not null)
+      {
+        <img src="@_previewDataUrl" alt="preview"
+             style="max-width:100%; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.08);"/>
+      }
+    </MudItem>
+  </MudGrid>
+
+  <MudStack Row="true" Spacing="2" Class="mb-4">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Analyze"
+               Disabled="@(_busy || _fileBytes is null)">
+      @if (_busy)
+      {
+        <MudProgressCircular Indeterminate="true" Size="Size.Medium" Class="mr-2"/>
+      }
+      Analyze
+    </MudButton>
+    <MudButton Variant="Variant.Outlined" Disabled="@(!_hasResult)" OnClick="Reset">Reset</MudButton>
+  </MudStack>
+
+  @if (_result is not null)
+  {
+    <MudPaper Class="p-3">
+      <MudText Typo="Typo.subtitle1">Estimated items</MudText>
+      <MudTable Items="_result.Items" Dense="true" Hover="true" Bordered="true">
+        <HeaderContent>
+          <MudTh>Name</MudTh>
+          <MudTh class="text-right">Calories</MudTh>
+          <MudTh class="text-right">Protein (g)</MudTh>
+          <MudTh class="text-right">Carbs (g)</MudTh>
+          <MudTh class="text-right">Fat (g)</MudTh>
+          <MudTh class="text-right">Conf.</MudTh>
+          <MudTh>Serving</MudTh>
+          <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+          <MudTd>
+            <MudTextField @bind-Value="context.Name" Immediate="true"/>
+          </MudTd>
+          <MudTd Class="text-right">
+            <MudNumericField T="double" @bind-Value="context.Calories" Immediate="true"/>
+          </MudTd>
+          <MudTd Class="text-right">
+            <MudNumericField T="double" @bind-Value="context.ProteinGrams" Immediate="true"/>
+          </MudTd>
+          <MudTd Class="text-right">
+            <MudNumericField T="double" @bind-Value="context.CarbsGrams" Immediate="true"/>
+          </MudTd>
+          <MudTd Class="text-right">
+            <MudNumericField T="double" @bind-Value="context.FatGrams" Immediate="true"/>
+          </MudTd>
+          <MudTd Class="text-right">
+            <MudNumericField T="double?" @bind-Value="context.Confidence" Immediate="true"/>
+          </MudTd>
+          <MudTd>
+            <MudTextField @bind-Value="context.ServingHint" Immediate="true"/>
+          </MudTd>
+          <MudTd>
+            <MudIconButton Icon="@Icons.Material.Outlined.Delete" Color="Color.Error"
+                           OnClick="@(() => RemoveRow(context))"/>
+          </MudTd>
+        </RowTemplate>
+        <FooterContent>
+          <MudTd colspan="8">
+            <MudStack Row="true" Justify="Justify.SpaceBetween">
+              <MudText><b>Total:</b> @_result.TotalCalories.ToString("0") kcal</MudText>
+              <MudButton Variant="Variant.Filled" Color="Color.Success" Disabled="@(!_hasResult)" OnClick="Save">Save
+              </MudButton>
+            </MudStack>
+          </MudTd>
+        </FooterContent>
+      </MudTable>
+
+      <MudButton Class="mt-3" Variant="Variant.Outlined" OnClick="AddRow">Add row</MudButton>
+    </MudPaper>
+  }
+</MudPaper>

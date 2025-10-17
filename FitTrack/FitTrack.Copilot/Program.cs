@@ -6,6 +6,7 @@ using FitTrack.Copilot.Components.Account;
 using FitTrack.Copilot.Data;
 using FitTrack.Copilot.Endpoints;
 using FitTrack.Copilot.Extension;
+using FitTrack.Copilot.Service;
 using Microsoft.AspNetCore.Http.Features;
 using MudBlazor.Services;
 
@@ -51,6 +52,8 @@ builder.Services.Configure<FormOptions>(o =>
 {
     o.MultipartBodyLengthLimit = 20 * 1024 * 1024; // 20MB
 });
+
+builder.Services.AddScoped<IFoodAiService, FoodAiServiceHttp>();
 
 var app = builder.Build();
 app.MapCopilotVision();

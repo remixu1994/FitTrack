@@ -1,0 +1,63 @@
+﻿@using System.Globalization
+@using FitTrack.Copilot.Abstractions.Models
+@inherits ComponentBase
+
+<MudCard Class="rounded-2xl">
+    <MudCardContent>
+        <MudStack Spacing="1">
+            <MudText Typo="Typo.subtitle1">Estimated Nutrition</MudText>
+
+            <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" >
+                @Result.TotalCalories.ToString("0") kcal
+            </MudChip>
+
+            @if (Result.Items?.Any() == true)
+            {
+                <MudDivider Class="my-2" />
+                <MudText Typo="Typo.subtitle2">Items</MudText>
+                <MudTable Items="@Result.Items" Dense="true" Hover="true" Bordered="true" Class="rounded-xl">
+                    <HeaderContent>
+                        <MudTh>Item</MudTh>
+                        <MudTh>Serving</MudTh>
+                        <MudTh>Calories</MudTh>
+                        <MudTh>P / C / F (g)</MudTh>
+                        <MudTh>Confidence</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Item">@context.Name</MudTd>
+                        <MudTd DataLabel="Serving">@context.ServingHint</MudTd>
+                        <MudTd DataLabel="Calories">@context.Calories.ToString("0")</MudTd>
+                        <MudTd DataLabel="P / C / F (g)">
+                            @FormattableString.Invariant($"{context.ProteinGrams:0}/{context.CarbsGrams:0}/{context.FatGrams:0}")
+                        </MudTd>
+                        <MudTd DataLabel="Confidence">
+                            @if (context.Confidence is not null)
+                            {
+                                <MudProgressLinear Value="@(context.Confidence.Value * 100)" />
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">–</MudText>
+                            }
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Result.Summary))
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">@Result.Summary</MudAlert>
+            }
+        </MudStack>
+    </MudCardContent>
+</MudCard>
+
+
+@code {
+
+    [Parameter]
+    public NutritionResult Result { get; set; } = default!;
+
+    private string Pct(double v, double total) => total <= 0 ? "0%" : (v / total).ToString("P0", CultureInfo.InvariantCulture);
+
+}

@@ -40,10 +40,7 @@ public sealed class ImageNutritionAgent : IAgent
             var result = await _vision.EstimateFromImageAsync(ctx, ct);
 
             // Optional: basic sanity check
-            if (result is null || result.Items.Count == 0)
-                return new AgentResult(true, new NutritionResult(), "No food items confidently detected.");
-
-            return new AgentResult(true, result, null);
+            return result.Items.Count == 0 ? new AgentResult(true, new NutritionResult(), "No food items confidently detected.") : new AgentResult(true, result, null);
         }
         catch (Exception ex)
         {

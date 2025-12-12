@@ -1,0 +1,15 @@
+### GET request to example server
+GET http://localhost:5097/usda/food/search
+Content-Type: application/json
+
+{
+  "Query": "banana"
+}
+
+###
+
+# curl https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY&query=Cheddar%20Cheese
+GET https://api.nal.usda.gov/fdc/v1/foods/search?api_key=XVi4WLtdmhtAEE92R9Ya8vAuHWoSr4MXovbMmtxT&query=Cheddar%20Cheese
+
+###
+

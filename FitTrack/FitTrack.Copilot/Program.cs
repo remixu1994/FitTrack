@@ -1,3 +1,4 @@
+using FitTrack.Copilot.Api.Usda;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -9,12 +10,46 @@ using FitTrack.Copilot.Extension;
 using FitTrack.Copilot.Service;
 using Microsoft.AspNetCore.Http.Features;
 using MudBlazor.Services;
+using NLog;
+using NLog.Config;
+using NLog.Extensions.Logging;
+using NLog.Targets;
+using NLog.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddOpenApi();
+
+builder.Logging.ClearProviders();
+builder.Host.UseNLog();
+
+// 配置 NLog
+var config = new LoggingConfiguration();
+
+// 创建控制台目标
+var consoleTarget = new ColoredConsoleTarget("console")
+{
+    Layout = "${longdate} | ${level:uppercase=true:padding=-5} | ${logger} | ${message} ${exception:format=tostring}"
+};
+
+// 设置日志规则 - 记录所有 Trace 级别及以上的日志
+config.AddRule(NLog.LogLevel.Trace, NLog.LogLevel.Fatal, consoleTarget);
+
+// 应用配置
+LogManager.Configuration = config;
+
+builder.Services.AddNLog();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddHttpClient("nutrition", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Nutrition:BaseUrl"]);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
@@ -28,6 +63,7 @@ builder.Services.AddAuthentication(options =>
     })
     .AddIdentityCookies();
 
+//Local DataBase
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
                        throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -54,9 +90,15 @@ builder.Services.Configure<FormOptions>(o =>
 });
 
 builder.Services.AddScoped<IFoodAiService, FoodAiServiceHttp>();
-
+builder.Services.AddUsdaClient(builder.Configuration);
 var app = builder.Build();
 app.MapCopilotVision();
+app.MapFood();
+app.MapOpenApi();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/openapi/v1.json", "v1");
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

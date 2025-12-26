@@ -8,10 +8,6 @@ namespace FitTrack.Copilot.Components.Pages;
 
 public partial class FoodVision
 {
-    private string _serviceId = "openai"; // default provider key
-    private string? _modelId;
-    private string? _hint;
-    private bool _busy;
     private bool _hasResult => _result is not null && _result.Items.Any();
     private byte[]? _fileBytes;
     private string? _fileContentType;
@@ -44,17 +40,12 @@ public partial class FoodVision
 
         try
         {
-            _busy = true;
             var client = HttpClientFactory.CreateClient();
             client.BaseAddress = new Uri(navigation?.BaseUri);
             using var form = new MultipartFormDataContent();
             var fileContent = new ByteArrayContent(_fileBytes);
             fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(_fileContentType);
             form.Add(fileContent, "image", "upload." + MimeToExt(_fileContentType));
-
-            if (!string.IsNullOrWhiteSpace(_hint)) form.Add(new StringContent(_hint), "hint");
-            if (!string.IsNullOrWhiteSpace(_serviceId)) form.Add(new StringContent(_serviceId), "serviceId");
-            if (!string.IsNullOrWhiteSpace(_modelId)) form.Add(new StringContent(_modelId!), "modelId");
 
             var res = await client.PostAsync("/copilot/vision/estimate", form);
             if (!res.IsSuccessStatusCode)
@@ -76,7 +67,6 @@ public partial class FoodVision
         }
         finally
         {
-            _busy = false;
             StateHasChanged();
         }
     }
@@ -113,8 +103,6 @@ public partial class FoodVision
         _fileBytes = null;
         _fileContentType = null;
         _previewDataUrl = null;
-        _modelId = null;
-        _hint = null;
     }
 
     private void AddRow()

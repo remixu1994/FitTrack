@@ -10,22 +10,6 @@
     estimates you can edit before saving.
   </MudText>
 
-  <MudGrid Class="mb-4">
-    <MudItem xs="12" md="3">
-      <MudSelect T="string" Label="Provider (serviceId)" @bind-Value="_serviceId" Dense="true">
-        <MudSelectItem Value="@("openai")">openai</MudSelectItem>
-      </MudSelect>
-    </MudItem>
-
-    <MudItem xs="12" md="3">
-      <MudTextField @bind-Value="_modelId" Label="Model Id (optional)" Dense="true"/>
-    </MudItem>
-
-    <MudItem xs="12" md="6">
-      <MudTextField @bind-Value="_hint" Label="Hint (e.g., half bowl, plate size)" Dense="true"/>
-    </MudItem>
-  </MudGrid>
-
   <MudGrid Class="mb-2">
     <MudItem xs="12" md="6">
       <MudText Typo="Typo.subtitle2">Upload image</MudText>
@@ -45,11 +29,8 @@
 
   <MudStack Row="true" Spacing="2" Class="mb-4">
     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Analyze"
-               Disabled="@(_busy || _fileBytes is null)">
-      @if (_busy)
-      {
+               Disabled="@( _fileBytes is null)">
         <MudProgressCircular Indeterminate="true" Size="Size.Medium" Class="mr-2"/>
-      }
       Analyze
     </MudButton>
     <MudButton Variant="Variant.Outlined" Disabled="@(!_hasResult)" OnClick="Reset">Reset</MudButton>

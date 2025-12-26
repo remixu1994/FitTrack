@@ -17,9 +17,13 @@ using NLog.Targets;
 using NLog.Web;
 
 var builder = WebApplication.CreateBuilder(args);
+//dotnet user-secrets set "AI:ApiKey" "your-local-api-key"
+builder.Configuration
+    .AddUserSecrets<Program>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddMemoryCache();
 
 builder.Logging.ClearProviders();
 builder.Host.UseNLog();

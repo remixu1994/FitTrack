@@ -13,6 +13,7 @@ Always produce a **strict JSON object** following the schema below — no explan
   "items": [
     {
       "name": "string (food name, e.g. beef noodles)",
+      "des": "Detailed description of the food in the image",
       "calories": 0.0,
       "proteinGrams": 0.0,
       "carbsGrams": 0.0,

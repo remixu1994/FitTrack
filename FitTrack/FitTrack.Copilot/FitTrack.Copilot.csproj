@@ -28,7 +28,7 @@
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.6" />
-        <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.10.1-preview.1.25521.4" />
+        <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.10.2-preview.1.25552.1" />
         <PackageReference Include="Microsoft.Extensions.AI" Version="9.10.2" />
         <PackageReference Include="Microsoft.SemanticKernel" Version="1.66.0" />
         <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" Version="1.66.0" />
@@ -55,7 +55,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="AI\" />
+      <Folder Include="Configurations\" />
       <Folder Include="Core\" />
+      <Folder Include="SemanticKernel\Kernel\" />
     </ItemGroup>
 
     <ItemGroup>

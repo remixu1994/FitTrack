@@ -35,9 +35,15 @@ public sealed class ImageNutritionAgent : IAgent
             
             // Require first file and assert it is an image/*
             ctx.RequireFirstFile("image/");
+            var hint = string.Empty;
 
+            if (request.Inputs.TryGetValue("hint", out object? ht))
+            {
+                hint = ht?.ToString() ?? "分析图片的内容后，再分析统计 他的卡路里。";
+            }
+            
             // Delegate to SK-backed plugin
-            var result = await _vision.EstimateFromImageAsync(ctx, ct);
+            var result = await _vision.EstimateFromImageAsync(new VisionNutritionInput(request.Files, hint), ct);
 
             // Optional: basic sanity check
             return result.Items.Count == 0 ? new AgentResult(true, new NutritionResult(), "No food items confidently detected.") : new AgentResult(true, result, null);

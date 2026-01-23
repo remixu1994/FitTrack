@@ -43,7 +43,7 @@ public sealed class ImageNutritionAgent : IAgent
             }
             
             // Delegate to SK-backed plugin
-            var result = await _vision.EstimateFromImageAsync(new VisionNutritionInput(request.Files, hint), ct);
+            var result = await _vision.EstimateFromImageAsync(new VisionFoodPlugin(request.Files, hint), ct);
 
             // Optional: basic sanity check
             return result.Items.Count == 0 ? new AgentResult(true, new NutritionResult(), "No food items confidently detected.") : new AgentResult(true, result, null);

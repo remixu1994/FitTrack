@@ -1,7 +1,7 @@
 ﻿using FitTrack.Copilot.Abstractions.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace FitTrack.Copilot.Components.Pages;
@@ -13,21 +13,54 @@ public partial class FoodVision
     private string? _fileContentType;
     private string? _previewDataUrl;
     private NutritionResult? _result;
+    private string? _hint;
+    private bool _busy;
+    private bool _isDragging;
+    private string? _fileName;
 
     [Inject]
     private NavigationManager? navigation { get; set; }
-    private async Task OnFileChange(InputFileChangeEventArgs e)
+    
+    [Inject]
+    private IHttpClientFactory HttpClientFactory { get; set; } = default!;
+    
+    [Inject]
+    private ISnackbar Snackbar { get; set; } = default!;
+
+    private async Task OnFileChange(IBrowserFile? file)
     {
-        var file = e.File;
         if (file is null) return;
 
-        using var ms = new MemoryStream();
-        await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(ms);
-        _fileBytes = ms.ToArray();
-        _fileContentType = file.ContentType;
+        // Validate file type
+        if (!file.ContentType.StartsWith("image/"))
+        {
+            Snackbar.Add("Please select an image file (JPG, PNG, WEBP).", Severity.Warning);
+            return;
+        }
 
-        // preview
-        _previewDataUrl = $"data:{_fileContentType};base64,{Convert.ToBase64String(_fileBytes)}";
+        // Validate file size (10MB)
+        if (file.Size > 10 * 1024 * 1024)
+        {
+            Snackbar.Add("File size must be less than 10 MB.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            using var ms = new MemoryStream();
+            await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(ms);
+            _fileBytes = ms.ToArray();
+            _fileContentType = file.ContentType;
+            _fileName = file.Name;
+
+            // preview
+            _previewDataUrl = $"data:{_fileContentType};base64,{Convert.ToBase64String(_fileBytes)}";
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load file: {ex.Message}", Severity.Error);
+        }
     }
 
     private async Task Analyze()
@@ -40,13 +73,14 @@ public partial class FoodVision
 
         try
         {
+            _busy = true;
             var client = HttpClientFactory.CreateClient();
             client.BaseAddress = new Uri(navigation?.BaseUri);
             using var form = new MultipartFormDataContent();
             var fileContent = new ByteArrayContent(_fileBytes);
             fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(_fileContentType);
             form.Add(fileContent, "image", "upload." + MimeToExt(_fileContentType));
-
+            if (!string.IsNullOrWhiteSpace(_hint)) form.Add(new StringContent(_hint), "hint");
             var res = await client.PostAsync("/copilot/vision/estimate", form);
             if (!res.IsSuccessStatusCode)
             {
@@ -67,6 +101,7 @@ public partial class FoodVision
         }
         finally
         {
+            _busy = false;
             StateHasChanged();
         }
     }
@@ -103,6 +138,48 @@ public partial class FoodVision
         _fileBytes = null;
         _fileContentType = null;
         _previewDataUrl = null;
+        _fileName = null;
+        _isDragging = false;
+    }
+
+    private void HandleDragEnter(DragEventArgs e)
+    {
+        _isDragging = true;
+    }
+
+    private void HandleDragLeave(DragEventArgs e)
+    {
+        _isDragging = false;
+    }
+
+    private void HandleDragOver(DragEventArgs e)
+    {
+        // This method exists to handle dragover event
+        // preventDefault is handled by Blazor directive
+    }
+
+    private void HandleDrop(DragEventArgs e)
+    {
+        _isDragging = false;
+    }
+
+    private void ClearImage()
+    {
+        _fileBytes = null;
+        _fileContentType = null;
+        _previewDataUrl = null;
+        _fileName = null;
+    }
+
+    private Color GetConfidenceColor(double confidence)
+    {
+        return confidence switch
+        {
+            >= 0.8 => Color.Success,
+            >= 0.6 => Color.Info,
+            >= 0.4 => Color.Warning,
+            _ => Color.Error
+        };
     }
 
     private void AddRow()

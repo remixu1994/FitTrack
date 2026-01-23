@@ -7,13 +7,13 @@ using ChatResponseFormat = Microsoft.Extensions.AI.ChatResponseFormat;
 
 namespace FitTrack.Copilot.SemanticKernel.Plugins;
 
-public sealed record VisionNutritionInput(
+public sealed record VisionFoodPlugin(
     IReadOnlyList<FilePart>? Images,
     string? Hint);
 
 public sealed class VisionNutritionPlugin(IChatClient chatClient, PromptLoader prompts)
 {
-    public async Task<NutritionResult> EstimateFromImageAsync(VisionNutritionInput input, CancellationToken ct)
+    public async Task<NutritionResult> EstimateFromImageAsync(VisionFoodPlugin input, CancellationToken ct)
     {
         List<ChatMessage> messages = await AddChatHistory(input, ct);
 
@@ -34,7 +34,7 @@ public sealed class VisionNutritionPlugin(IChatClient chatClient, PromptLoader p
                ?? new NutritionResult();
     }
 
-    private async Task<List<ChatMessage>> AddChatHistory(VisionNutritionInput input, CancellationToken ct)
+    private async Task<List<ChatMessage>> AddChatHistory(VisionFoodPlugin input, CancellationToken ct)
     {
         var system = await prompts.LoadAsync("vision_nutrition.system.md", ct);
 

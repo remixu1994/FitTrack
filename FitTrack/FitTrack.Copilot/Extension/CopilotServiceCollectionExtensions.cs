@@ -3,6 +3,7 @@ using Azure.AI.OpenAI;
 using FitTrack.Copilot.Abstractions;
 using FitTrack.Copilot.Agent;
 using FitTrack.Copilot.Middleware;
+using FitTrack.Copilot.SemanticKernel.Orchestrator;
 using FitTrack.Copilot.SemanticKernel.Plugins;
 using FitTrack.Copilot.SemanticKernel.Tooling;
 using Microsoft.Extensions.AI;
@@ -19,9 +20,16 @@ public static class CopilotServiceCollectionExtensions
         services.Configure<PromptOptions>(configuration.GetSection("Prompts"));
         services.AddSingleton<PromptLoader>();
         services.AddChatClient(configuration);
+        
+        // Register new plugin architecture
+        services.AddTransient<VisionFoodRecognitionPlugin>();
+        services.AddTransient<NutritionPlugin>();
+        services.AddTransient<FoodNutritionOrchestrator>();
+        
+        // Updated agent registration
         services.AddTransient<ImageNutritionAgent>();
-        services.AddTransient<VisionNutritionPlugin>();
         services.AddScoped<IAgent>(sp => sp.GetRequiredService<ImageNutritionAgent>());
+        
         return services;
     }
 

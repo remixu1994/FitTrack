@@ -1,5 +1,5 @@
-﻿using FitTrack.Copilot.Abstractions;
-using FitTrack.Copilot.Abstractions.Models;
+using FitTrack.Copilot.Abstractions;
+using FitTrack.Copilot.Models;
 using FitTrack.Copilot.SemanticKernel.Tooling;
 using Microsoft.Extensions.AI;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
@@ -7,15 +7,14 @@ using ChatResponseFormat = Microsoft.Extensions.AI.ChatResponseFormat;
 
 namespace FitTrack.Copilot.SemanticKernel.Plugins;
 
-public sealed record VisionFoodPlugin(
-    IReadOnlyList<FilePart>? Images,
-    string? Hint);
-
-public sealed class VisionNutritionPlugin(IChatClient chatClient, PromptLoader prompts)
+public sealed class VisionFoodRecognitionPlugin(IChatClient chatClient, PromptLoader prompts)
 {
-    public async Task<NutritionResult> EstimateFromImageAsync(VisionFoodPlugin input, CancellationToken ct)
+    /// <summary>
+    /// Analyze food images and return a list of recognized food items
+    /// </summary>
+    public async Task<List<FoodItem>> RecognizeFoodFromImagesAsync(VisionNutritionInput input, CancellationToken ct)
     {
-        List<ChatMessage> messages = await AddChatHistory(input, ct);
+        var messages = await BuildVisionMessagesAsync(input, ct);
 
         var options = new ChatOptions
         {
@@ -25,22 +24,21 @@ public sealed class VisionNutritionPlugin(IChatClient chatClient, PromptLoader p
             ResponseFormat = ChatResponseFormat.Json
         };
 
-        var response = await chatClient.GetResponseAsync(
-            messages,
-            options,
-            ct);
+        var response = await chatClient.GetResponseAsync(messages, options, ct);
 
-        return response.Text.Deserialize<NutritionResult>()
-               ?? new NutritionResult();
+        // Parse the response to extract food items
+        var foodItems = response.Text.Deserialize<List<FoodItem>>();
+        
+        return foodItems?.Where(item => !string.IsNullOrEmpty(item.Name)).ToList() ?? new List<FoodItem>();
     }
 
-    private async Task<List<ChatMessage>> AddChatHistory(VisionFoodPlugin input, CancellationToken ct)
+    private async Task<List<ChatMessage>> BuildVisionMessagesAsync(VisionNutritionInput input, CancellationToken ct)
     {
-        var system = await prompts.LoadAsync("vision_nutrition.system.md", ct);
+        var systemPrompt = await prompts.LoadAsync("vision_food_recognition.system.md", ct);
 
         var messages = new List<ChatMessage>
         {
-            new(ChatRole.System, system),
+            new(ChatRole.System, systemPrompt),
         };
 
         if (!string.IsNullOrWhiteSpace(input.Hint))
@@ -48,10 +46,8 @@ public sealed class VisionNutritionPlugin(IChatClient chatClient, PromptLoader p
             messages.Add(new ChatMessage(ChatRole.User, input.Hint));
         }
 
-
         if (input.Images != null && input.Images.Any())
         {
-
             messages.AddRange(input.Images.Select(img =>
             {
                 var base64 = Convert.ToBase64String(img.Bytes);
@@ -60,11 +56,11 @@ public sealed class VisionNutritionPlugin(IChatClient chatClient, PromptLoader p
                     new List<AIContent>
                     {
                         new UriContent(new Uri(dataUrl), img.ContentType),
-                        new TextContent("Respond JSON only.")
+                        new TextContent("Respond with a JSON array of food items identified in the image.")
                     });
             }));
         }
+        
         return messages;
     }
-
 }

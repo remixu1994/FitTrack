@@ -1,7 +1,8 @@
 ﻿using FitTrack.Copilot.Abstractions;
 using FitTrack.Copilot.Abstractions.Agents;
 using FitTrack.Copilot.Abstractions.Models;
-using FitTrack.Copilot.SemanticKernel.Plugins;
+using FitTrack.Copilot.Models;
+using FitTrack.Copilot.SemanticKernel.Orchestrator;
 
 namespace FitTrack.Copilot.Agent;
 
@@ -16,11 +17,11 @@ public sealed class ImageNutritionAgent : IAgent
         Capabilities: new[] { "vision.nutrition.estimate" },
         Metadata: new Dictionary<string, string> { ["domain"] = "nutrition", ["modality"] = "vision" });
 
-    private readonly VisionNutritionPlugin _vision;
+    private readonly FoodNutritionOrchestrator _orchestrator;
 
-    public ImageNutritionAgent(VisionNutritionPlugin vision)
+    public ImageNutritionAgent(FoodNutritionOrchestrator orchestrator)
     {
-        _vision = vision;
+        _orchestrator = orchestrator;
     }
 
     public async Task<AgentResult> ExecuteAsync(AgentRequest request, CancellationToken ct = default)
@@ -42,8 +43,14 @@ public sealed class ImageNutritionAgent : IAgent
                 hint = ht?.ToString() ?? "分析图片的内容后，再分析统计 他的卡路里。";
             }
             
-            // Delegate to SK-backed plugin
-            var result = await _vision.EstimateFromImageAsync(new VisionFoodPlugin(request.Files, hint), ct);
+            // Build input model for orchestrator
+            var input = new VisionNutritionInput(
+                Images: request.Files,
+                Hint: hint,
+                UserId: request.UserId);
+            
+            // Delegate to orchestrator
+            var result = await _orchestrator.ProcessVisionNutritionAsync(input, ct);
 
             // Optional: basic sanity check
             return result.Items.Count == 0 ? new AgentResult(true, new NutritionResult(), "No food items confidently detected.") : new AgentResult(true, result, null);

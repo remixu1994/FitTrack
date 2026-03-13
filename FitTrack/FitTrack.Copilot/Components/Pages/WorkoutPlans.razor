@@ -1,0 +1,322 @@
+@page "/workout-plans"
+@using FitTrack.Copilot.Service
+@using FitTrack.Copilot.Data
+@inject IFitnessService FitnessService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Workout Plans</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="container mt-4">
+            <h1 class="text-center mb-4">Workout Plans</h1>
+            
+            <div class="mb-4">
+                <button class="btn btn-primary" @onclick="OpenCreateModal">Create New Plan</button>
+            </div>
+            
+            <div class="row">
+                @foreach (var plan in workoutPlans)
+                {
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>@plan.PlanName</h3>
+                                @if (!string.IsNullOrEmpty(plan.FitnessLevel))
+                                {
+                                    <span class="badge badge-info">@plan.FitnessLevel</span>
+                                }
+                            </div>
+                            <div class="card-body">
+                                @if (!string.IsNullOrEmpty(plan.Description))
+                                {
+                                    <p>@plan.Description</p>
+                                }
+                                <p><strong>Created:</strong> @plan.CreatedAt.ToShortDateString()</p>
+                                @if (plan.LastModified.HasValue)
+                                {
+                                    <p><strong>Last Modified:</strong> @plan.LastModified.Value.ToShortDateString()</p>
+                                }
+                                <p><strong>Workout Days:</strong> @plan.WorkoutDays.Count</p>
+                                <div class="mt-3">
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewPlan(plan)">View</button>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => EditPlan(plan)">Edit</button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeletePlan(plan.Id)">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            
+            @if (workoutPlans.Count == 0)
+            {
+                <div class="text-center">
+                    <p>You don't have any workout plans yet.</p>
+                    <button class="btn btn-primary" @onclick="OpenCreateModal">Create Your First Plan</button>
+                </div>
+            }
+        </div>
+        
+        <!-- Create/Edit Modal -->
+        <div class="modal @(isModalOpen ? "show" : "")" tabindex="-1" role="dialog" style="display: @(isModalOpen ? "block" : "none")">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@(isEditing ? "Edit Plan" : "Create New Plan")</h5>
+                        <button type="button" class="close" @onclick="CloseModal">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form @onsubmit="HandleSubmit">
+                            <div class="form-group">
+                                <label for="planName">Plan Name</label>
+                                <input type="text" class="form-control" id="planName" @bind="currentPlan.PlanName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="description">Description</label>
+                                <textarea class="form-control" id="description" @bind="currentPlan.Description" rows="3"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="fitnessLevel">Fitness Level</label>
+                                <select class="form-control" id="fitnessLevel" @bind="currentPlan.FitnessLevel">
+                                    <option value="">Select Level</option>
+                                    <option value="beginner">Beginner</option>
+                                    <option value="intermediate">Intermediate</option>
+                                    <option value="advanced">Advanced</option>
+                                </select>
+                            </div>
+                            
+                            <h4 class="mt-4">Workout Days</h4>
+                            @foreach (var day in currentPlan.WorkoutDays)
+                            {
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <input type="text" class="form-control" @bind="day.DayOfWeek" placeholder="Day of Week (e.g., Monday)">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <button type="button" class="btn btn-sm btn-danger" @onclick="() => RemoveWorkoutDay(day)">Remove Day</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <h5>Exercises</h5>
+                                        @foreach (var exercise in day.Exercises)
+                                        {
+                                            <div class="row mb-2">
+                                                <div class="col-md-4">
+                                                    <input type="text" class="form-control" @bind="exercise.Name" placeholder="Exercise Name">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <input type="number" class="form-control" @bind="exercise.Sets" placeholder="Sets">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <input type="number" class="form-control" @bind="exercise.Reps" placeholder="Reps">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <input type="number" class="form-control" @bind="exercise.Duration" placeholder="Duration (min)">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <button type="button" class="btn btn-sm btn-danger" @onclick="() => RemoveExercise(day, exercise)">Remove</button>
+                                                </div>
+                                            </div>
+                                        }
+                                        <button type="button" class="btn btn-sm btn-primary" @onclick="() => AddExercise(day)">Add Exercise</button>
+                                    </div>
+                                </div>
+                            }
+                            <button type="button" class="btn btn-sm btn-primary" @onclick="AddWorkoutDay">Add Workout Day</button>
+                            
+                            <div class="modal-footer mt-4">
+                                <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Save</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (isModalOpen)
+        {
+            <div class="modal-backdrop show"></div>
+        }
+        
+        <!-- View Plan Modal -->
+        <div class="modal @(isViewModalOpen ? "show" : "")" tabindex="-1" role="dialog" style="display: @(isViewModalOpen ? "block" : "none")">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@viewingPlan?.PlanName</h5>
+                        <button type="button" class="close" @onclick="CloseViewModal">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        @if (viewingPlan != null)
+                        {
+                            <p>@viewingPlan.Description</p>
+                            <p><strong>Fitness Level:</strong> @viewingPlan.FitnessLevel</p>
+                            <p><strong>Created:</strong> @viewingPlan.CreatedAt.ToShortDateString()</p>
+                            
+                            <h4 class="mt-4">Workout Days</h4>
+                            @foreach (var day in viewingPlan.WorkoutDays)
+                            {
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h5>@day.DayOfWeek</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <ul class="list-group">
+                                            @foreach (var exercise in day.Exercises)
+                                            {
+                                                <li class="list-group-item">
+                                                    <strong>@exercise.Name</strong>
+                                                    @if (exercise.Sets.HasValue)
+                                                    {
+                                                        <span class="ml-2">@exercise.Sets sets</span>
+                                                    }
+                                                    @if (exercise.Reps.HasValue)
+                                                    {
+                                                        <span class="ml-2">@exercise.Reps reps</span>
+                                                    }
+                                                    @if (exercise.Duration.HasValue)
+                                                    {
+                                                        <span class="ml-2">@exercise.Duration minutes</span>
+                                                    }
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseViewModal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (isViewModalOpen)
+        {
+            <div class="modal-backdrop show"></div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <div class="container mt-4 text-center">
+            <h1>You need to log in to view your workout plans</h1>
+            <a href="/Account/Login" class="btn btn-primary">Log In</a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private List<WorkoutPlan> workoutPlans = new();
+    private WorkoutPlan currentPlan = new();
+    private WorkoutPlan? viewingPlan;
+    private bool isModalOpen = false;
+    private bool isViewModalOpen = false;
+    private bool isEditing = false;
+    private string? userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            userId = user.Identity.Name;
+            await LoadPlans();
+        }
+    }
+
+    private async Task LoadPlans()
+    {
+        if (userId != null)
+        {
+            workoutPlans = await FitnessService.GetWorkoutPlansByUserIdAsync(userId);
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        currentPlan = new WorkoutPlan
+        {
+            UserId = userId!, 
+            CreatedAt = DateTime.UtcNow
+        };
+        isEditing = false;
+        isModalOpen = true;
+    }
+
+    private async Task EditPlan(WorkoutPlan plan)
+    {
+        currentPlan = await FitnessService.GetWorkoutPlanAsync(plan.Id);
+        if (currentPlan != null)
+        {
+            isEditing = true;
+            isModalOpen = true;
+        }
+    }
+
+    private async Task ViewPlan(WorkoutPlan plan)
+    {
+        viewingPlan = await FitnessService.GetWorkoutPlanAsync(plan.Id);
+        isViewModalOpen = true;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (isEditing)
+        {
+            currentPlan.LastModified = DateTime.UtcNow;
+            await FitnessService.UpdateWorkoutPlanAsync(currentPlan);
+        }
+        else
+        {
+            await FitnessService.CreateWorkoutPlanAsync(currentPlan);
+        }
+        CloseModal();
+        await LoadPlans();
+    }
+
+    private async Task DeletePlan(int id)
+    {
+        await FitnessService.DeleteWorkoutPlanAsync(id);
+        await LoadPlans();
+    }
+
+    private void AddWorkoutDay()
+    {
+        currentPlan.WorkoutDays.Add(new WorkoutDay());
+    }
+
+    private void RemoveWorkoutDay(WorkoutDay day)
+    {
+        currentPlan.WorkoutDays.Remove(day);
+    }
+
+    private void AddExercise(WorkoutDay day)
+    {
+        day.Exercises.Add(new Exercise());
+    }
+
+    private void RemoveExercise(WorkoutDay day, Exercise exercise)
+    {
+        day.Exercises.Remove(exercise);
+    }
+
+    private void CloseModal()
+    {
+        isModalOpen = false;
+    }
+
+    private void CloseViewModal()
+    {
+        isViewModalOpen = false;
+    }
+}

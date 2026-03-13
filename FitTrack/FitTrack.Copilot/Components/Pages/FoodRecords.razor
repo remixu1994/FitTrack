@@ -1,0 +1,273 @@
+@page "/food-records"
+@using FitTrack.Copilot.Service
+@using FitTrack.Copilot.Data
+@inject IFoodRecordService FoodRecordService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Food Records</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="container mt-4">
+            <h1 class="text-center mb-4">Food Records</h1>
+            
+            <div class="mb-4">
+                <button class="btn btn-primary" @onclick="OpenCreateModal">Log New Food</button>
+                <div class="mt-2">
+                    <label for="dateFilter">Filter by Date:</label>
+                    <input type="date" id="dateFilter" @bind="filterDate" @bind:after="FilterByDate">
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>Nutrition Summary for @filterDate.ToShortDateString()</h3>
+                </div>
+                <div class="card-body">
+                    @if (nutritionSummary != null)
+                    {
+                        <div class="nutrition-summary">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <p><strong>Calories:</strong> @nutritionSummary.TotalCalories</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <p><strong>Protein:</strong> @nutritionSummary.TotalProtein g</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <p><strong>Carbs:</strong> @nutritionSummary.TotalCarbs g</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <p><strong>Fat:</strong> @nutritionSummary.TotalFat g</p>
+                                </div>
+                            </div>
+                            <p><small>@nutritionSummary.RecordCount items logged</small></p>
+                        </div>
+                    }
+                    else
+                    {
+                        <p>No food records for this date.</p>
+                    }
+                </div>
+            </div>
+            
+            <div class="row">
+                @foreach (var record in foodRecords)
+                {
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>@record.FoodName</h3>
+                                @if (!string.IsNullOrEmpty(record.MealType))
+                                {
+                                    <span class="badge badge-info">@record.MealType</span>
+                                }
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Calories:</strong> @record.Calories</p>
+                                <p><strong>Protein:</strong> @record.Protein g</p>
+                                <p><strong>Carbs:</strong> @record.Carbs g</p>
+                                <p><strong>Fat:</strong> @record.Fat g</p>
+                                @if (record.ServingSize.HasValue && !string.IsNullOrEmpty(record.ServingUnit))
+                                {
+                                    <p><strong>Serving:</strong> @record.ServingSize.Value @record.ServingUnit</p>
+                                }
+                                <p><strong>Date:</strong> @record.ConsumptionDate.ToShortDateString()</p>
+                                <p><strong>Time:</strong> @record.ConsumptionDate.ToShortTimeString()</p>
+                                <div class="mt-3">
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => EditRecord(record)">Edit</button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteRecord(record.Id)">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            
+            @if (foodRecords.Count == 0)
+            {
+                <div class="text-center">
+                    <p>You haven't logged any food for this date.</p>
+                    <button class="btn btn-primary" @onclick="OpenCreateModal">Log Your First Food</button>
+                </div>
+            }
+        </div>
+        
+        <!-- Create/Edit Modal -->
+        <div class="modal @(isModalOpen ? "show" : "")" tabindex="-1" role="dialog" style="display: @(isModalOpen ? "block" : "none")">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@(isEditing ? "Edit Food Record" : "Log New Food")</h5>
+                        <button type="button" class="close" @onclick="CloseModal">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form @onsubmit="HandleSubmit">
+                            <div class="form-group">
+                                <label for="foodName">Food Name</label>
+                                <input type="text" class="form-control" id="foodName" @bind="currentRecord.FoodName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="calories">Calories</label>
+                                <input type="number" class="form-control" id="calories" @bind="currentRecord.Calories" step="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="protein">Protein (g)</label>
+                                <input type="number" class="form-control" id="protein" @bind="currentRecord.Protein" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label for="carbs">Carbs (g)</label>
+                                <input type="number" class="form-control" id="carbs" @bind="currentRecord.Carbs" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label for="fat">Fat (g)</label>
+                                <input type="number" class="form-control" id="fat" @bind="currentRecord.Fat" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label for="servingSize">Serving Size</label>
+                                <input type="number" class="form-control" id="servingSize" @bind="currentRecord.ServingSize" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label for="servingUnit">Serving Unit</label>
+                                <input type="text" class="form-control" id="servingUnit" @bind="currentRecord.ServingUnit" placeholder="e.g., g, oz, cup">
+                            </div>
+                            <div class="form-group">
+                                <label for="mealType">Meal Type</label>
+                                <select class="form-control" id="mealType" @bind="currentRecord.MealType">
+                                    <option value="">Select Meal Type</option>
+                                    <option value="breakfast">Breakfast</option>
+                                    <option value="lunch">Lunch</option>
+                                    <option value="dinner">Dinner</option>
+                                    <option value="snack">Snack</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="consumptionDate">Date</label>
+                                <input type="datetime-local" class="form-control" id="consumptionDate" @bind="currentRecord.ConsumptionDate">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Save</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (isModalOpen)
+        {
+            <div class="modal-backdrop show"></div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <div class="container mt-4 text-center">
+            <h1>You need to log in to view your food records</h1>
+            <a href="/Account/Login" class="btn btn-primary">Log In</a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private List<FoodRecord> foodRecords = new();
+    private FoodRecord currentRecord = new();
+    private NutritionSummary? nutritionSummary;
+    private bool isModalOpen = false;
+    private bool isEditing = false;
+    private string? userId;
+    private DateTime filterDate = DateTime.UtcNow;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            userId = user.Identity.Name;
+            await LoadRecords();
+            await LoadNutritionSummary();
+        }
+    }
+
+    private async Task LoadRecords()
+    {
+        if (userId != null)
+        {
+            foodRecords = await FoodRecordService.GetFoodRecordsByDateAsync(userId, filterDate);
+        }
+    }
+
+    private async Task LoadNutritionSummary()
+    {
+        if (userId != null)
+        {
+            nutritionSummary = await FoodRecordService.GetNutritionSummaryByDateAsync(userId, filterDate);
+        }
+    }
+
+    private async Task FilterByDate()
+    {
+        await LoadRecords();
+        await LoadNutritionSummary();
+    }
+
+    private void OpenCreateModal()
+    {
+        currentRecord = new FoodRecord
+        {
+            UserId = userId!, 
+            ConsumptionDate = DateTime.UtcNow
+        };
+        isEditing = false;
+        isModalOpen = true;
+    }
+
+    private void EditRecord(FoodRecord record)
+    {
+        currentRecord = new FoodRecord
+        {
+            Id = record.Id,
+            UserId = record.UserId,
+            FoodName = record.FoodName,
+            Calories = record.Calories,
+            Protein = record.Protein,
+            Carbs = record.Carbs,
+            Fat = record.Fat,
+            ServingSize = record.ServingSize,
+            ServingUnit = record.ServingUnit,
+            ConsumptionDate = record.ConsumptionDate,
+            MealType = record.MealType
+        };
+        isEditing = true;
+        isModalOpen = true;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (isEditing)
+        {
+            await FoodRecordService.UpdateFoodRecordAsync(currentRecord);
+        }
+        else
+        {
+            await FoodRecordService.CreateFoodRecordAsync(currentRecord);
+        }
+        CloseModal();
+        await LoadRecords();
+        await LoadNutritionSummary();
+    }
+
+    private async Task DeleteRecord(int id)
+    {
+        await FoodRecordService.DeleteFoodRecordAsync(id);
+        await LoadRecords();
+        await LoadNutritionSummary();
+    }
+
+    private void CloseModal()
+    {
+        isModalOpen = false;
+    }
+}

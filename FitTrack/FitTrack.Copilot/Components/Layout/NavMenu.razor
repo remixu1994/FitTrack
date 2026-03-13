@@ -1,4 +1,4 @@
-﻿@implements IDisposable
+@implements IDisposable
 
 @inject NavigationManager NavigationManager
 
@@ -33,6 +33,42 @@
 
         <AuthorizeView>
             <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="fitness-goals">
+                        <span class="bi bi-bullseye-nav-menu" aria-hidden="true"></span> Fitness Goals
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="workout-plans">
+                        <span class="bi bi-list-check-nav-menu" aria-hidden="true"></span> Workout Plans
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="workout-sessions">
+                        <span class="bi bi-activity-nav-menu" aria-hidden="true"></span> Workout Sessions
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="food-records">
+                        <span class="bi bi-utensils-nav-menu" aria-hidden="true"></span> Food Records
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="chat">
+                        <span class="bi bi-chat-nav-menu" aria-hidden="true"></span> Fitness Chat
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="food-vision">
+                        <span class="bi bi-camera-nav-menu" aria-hidden="true"></span> Food Vision
+                    </NavLink>
+                </div>
+
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="Account/Manage">
                         <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name

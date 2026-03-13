@@ -81,6 +81,9 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
+// USDA Client (must be registered before CopilotServices)
+builder.Services.AddUsdaClient(builder.Configuration);
+
 // Semantic Kernel
 builder.Services.AddCopilotServices(builder.Configuration);
 
@@ -93,10 +96,12 @@ builder.Services.Configure<FormOptions>(o =>
     o.MultipartBodyLengthLimit = 20 * 1024 * 1024; // 20MB
 });
 
-builder.Services.AddScoped<IFoodAiService, FoodAiServiceHttp>();
-builder.Services.AddUsdaClient(builder.Configuration);
+builder.Services.AddScoped<IFoodAiService, FoodAiService>();
+builder.Services.AddScoped<IFitnessService, FitnessService>();
+builder.Services.AddScoped<IWorkoutSessionService, WorkoutSessionService>();
+builder.Services.AddScoped<IFoodRecordService, FoodRecordService>();
 var app = builder.Build();
-app.MapCopilotVision();
+// app.MapCopilotVision();
 app.MapFood();
 app.MapOpenApi();
 app.UseSwaggerUI(options =>

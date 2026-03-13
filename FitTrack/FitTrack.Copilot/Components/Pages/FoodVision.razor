@@ -98,7 +98,7 @@
             <MudButton Variant="Variant.Filled" 
                        Color="Color.Primary" 
                        OnClick="Analyze"
-                       Disabled="@(_fileBytes is null || _busy)"
+                       Disabled="@(_busy || (_fileBytes is null && string.IsNullOrWhiteSpace(_hint)))"
                        Size="Size.Large"
                        FullWidth="true"
                        StartIcon="@Icons.Material.Filled.Psychology">

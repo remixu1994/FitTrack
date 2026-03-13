@@ -2,18 +2,29 @@ using FitTrack.Copilot.Abstractions;
 using FitTrack.Copilot.Models;
 using FitTrack.Copilot.SemanticKernel.Tooling;
 using Microsoft.Extensions.AI;
-using System.Text.Json;
+using Microsoft.SemanticKernel;
+using System.ComponentModel;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using ChatResponseFormat = Microsoft.Extensions.AI.ChatResponseFormat;
+using TextContent = Microsoft.Extensions.AI.TextContent;
 
-namespace FitTrack.Copilot.SemanticKernel.Plugins;
+namespace FitTrack.Copilot.SemanticKernel.Skills;
 
-public sealed class VisionFoodRecognitionPlugin(IChatClient chatClient, PromptLoader prompts)
+public class VisionFoodRecognitionSkill
 {
-    /// <summary>
-    /// Analyze food images and return a list of recognized food items
-    /// </summary>
-    public async Task<List<FoodItem>> RecognizeFoodFromImagesAsync(VisionNutritionInput input, CancellationToken ct)
+    private readonly IChatClient _chatClient;
+    private readonly PromptLoader _prompts;
+
+    public VisionFoodRecognitionSkill(IChatClient chatClient, PromptLoader prompts)
+    {
+        _chatClient = chatClient;
+        _prompts = prompts;
+    }
+
+    [KernelFunction, Description("Analyze food images and return a list of recognized food items")]
+    public async Task<List<FoodItem>> RecognizeFoodFromImagesAsync(
+        [Description("Vision nutrition input with images and hint")] VisionNutritionInput input,
+        CancellationToken ct)
     {
         var messages = await BuildVisionMessagesAsync(input, ct);
 
@@ -25,15 +36,17 @@ public sealed class VisionFoodRecognitionPlugin(IChatClient chatClient, PromptLo
             ResponseFormat = ChatResponseFormat.Json
         };
 
-        var response = await chatClient.GetResponseAsync(messages, options, ct);
-        var foodItems = ParseFoodItems(response.Text);
+        var response = await _chatClient.GetResponseAsync(messages, options, ct);
+
+        // Parse the response to extract food items
+        var foodItems = response.Text.Deserialize<List<FoodItem>>();
         
         return foodItems?.Where(item => !string.IsNullOrEmpty(item.Name)).ToList() ?? new List<FoodItem>();
     }
 
     private async Task<List<ChatMessage>> BuildVisionMessagesAsync(VisionNutritionInput input, CancellationToken ct)
     {
-        var systemPrompt = await prompts.LoadAsync("vision_nutrition.system.md", ct);
+        var systemPrompt = await _prompts.LoadAsync("vision_nutrition.system.md", ct);
 
         var messages = new List<ChatMessage>
         {
@@ -61,39 +74,5 @@ public sealed class VisionFoodRecognitionPlugin(IChatClient chatClient, PromptLo
         }
         
         return messages;
-    }
-
-    private static List<FoodItem>? ParseFoodItems(string? text)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return null;
-        }
-
-        // Case 1: direct JSON array
-        var direct = text.Deserialize<List<FoodItem>>();
-        if (direct is { Count: > 0 })
-        {
-            return direct;
-        }
-
-        // Case 2: wrapped object { "items": [...] }
-        try
-        {
-            var wrapped = JsonSerializer.Deserialize<FoodItemsWrapper>(text, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-            return wrapped?.Items;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private sealed class FoodItemsWrapper
-    {
-        public List<FoodItem> Items { get; set; } = new();
     }
 }

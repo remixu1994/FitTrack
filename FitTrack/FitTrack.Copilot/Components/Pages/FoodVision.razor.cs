@@ -1,4 +1,4 @@
-﻿using FitTrack.Copilot.Abstractions.Models;
+using FitTrack.Copilot.Abstractions.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
@@ -23,6 +23,9 @@ public partial class FoodVision
     
     [Inject]
     private IHttpClientFactory HttpClientFactory { get; set; } = default!;
+    
+    [Inject]
+    private FitTrack.Copilot.Service.IFoodAiService FoodService { get; set; } = default!;
     
     [Inject]
     private ISnackbar Snackbar { get; set; } = default!;
@@ -65,31 +68,26 @@ public partial class FoodVision
 
     private async Task Analyze()
     {
-        if (_fileBytes is null || _fileContentType is null)
+        var hasImage = _fileBytes is not null && _fileContentType is not null;
+        var hasText = !string.IsNullOrWhiteSpace(_hint);
+
+        if (!hasImage && !hasText)
         {
-            Snackbar.Add("Please select an image first.", Severity.Warning);
+            Snackbar.Add("Please provide an image or text description.", Severity.Warning);
             return;
         }
 
         try
         {
             _busy = true;
-            var client = HttpClientFactory.CreateClient();
-            client.BaseAddress = new Uri(navigation?.BaseUri);
-            using var form = new MultipartFormDataContent();
-            var fileContent = new ByteArrayContent(_fileBytes);
-            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(_fileContentType);
-            form.Add(fileContent, "image", "upload." + MimeToExt(_fileContentType));
-            if (!string.IsNullOrWhiteSpace(_hint)) form.Add(new StringContent(_hint), "hint");
-            var res = await client.PostAsync("/copilot/vision/estimate", form);
-            if (!res.IsSuccessStatusCode)
+            var req = new FitTrack.Copilot.Service.FoodRequest
             {
-                var msg = await res.Content.ReadAsStringAsync();
-                Snackbar.Add($"Analyze failed: {res.StatusCode} - {msg}", Severity.Error);
-                return;
-            }
+                ImageDataUrl = _previewDataUrl,
+                Text = _hint
+            };
 
-            _result = await res.Content.ReadFromJsonAsync<NutritionResult>() ?? new NutritionResult();
+            _result = await FoodService.AnalyzeAsync(req);
+
             if (!_result.Items.Any())
                 Snackbar.Add("No items detected. Please adjust hint or choose a different provider.", Severity.Info);
             else

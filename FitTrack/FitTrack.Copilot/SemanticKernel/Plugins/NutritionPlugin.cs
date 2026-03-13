@@ -1,6 +1,6 @@
-﻿using FitTrack.Copilot.Abstractions.Models;
+using FitTrack.Copilot.Abstractions.Models;
 using FitTrack.Copilot.Api.Usda;
-using FitTrack.Copilot.Api.Usda.Models;
+using FoodDetail = FitTrack.Copilot.Api.Usda.Models.FoodDetail;
 
 namespace FitTrack.Copilot.SemanticKernel.Plugins;
 
@@ -14,65 +14,67 @@ public class NutritionPlugin
     }
 
     /// <summary>
-    /// Query nutrition data for a list of food items
+    /// Query nutrition data for a list of food items.
     /// </summary>
     public async Task<NutritionResult> GetNutritionAsync(List<string> foodNames, CancellationToken ct = default)
     {
         var result = new NutritionResult();
-        
+
         foreach (var foodName in foodNames)
         {
             try
             {
                 var usdaFood = await _usdaClient.SearchAsync(foodName);
-               var footd = await _usdaClient.GetFoodAsync(usdaFood.FdcId);
-                if (usdaFood != null && footd.FoodNutrients.Any())
+                if (usdaFood is null)
                 {
-                    // Take the first match for simplicity
-                    var food = footd.FoodNutrients.First();
-                    
-                    var nutritionItem = new NutritionItem
-                    {
-                        Name = food.Name,
-                        Calories = food.Amount,
-                        ServingHint = food.UnitName,
-                        Source = "usda"
-                    };
-                    
-                    result.Items.Add(nutritionItem);
+                    result.Items.Add(CreateUnknownItem(foodName));
+                    continue;
                 }
-                else
+
+                var foodDetail = await _usdaClient.GetFoodAsync(usdaFood.FdcId);
+                if (foodDetail is null)
                 {
-                    // Fallback: create a placeholder item if no USDA data found
-                    result.Items.Add(new NutritionItem
-                    {
-                        Name = foodName,
-                        Calories = 0,
-                        ProteinGrams = 0,
-                        CarbsGrams = 0,
-                        FatGrams = 0,
-                        Source = "unknown"
-                    });
+                    result.Items.Add(CreateUnknownItem(foodName));
+                    continue;
                 }
+
+                result.Items.Add(new NutritionItem
+                {
+                    Name = usdaFood.Description ?? foodName,
+                    Calories = GetNutrientAmount(foodDetail, 1008), // Energy (kcal)
+                    ProteinGrams = GetNutrientAmount(foodDetail, 1003), // Protein
+                    CarbsGrams = GetNutrientAmount(foodDetail, 1005), // Carbohydrate
+                    FatGrams = GetNutrientAmount(foodDetail, 1004), // Total lipid (fat)
+                    ServingHint = "per USDA entry",
+                    Source = "usda"
+                });
             }
             catch (Exception ex)
             {
-                // Log error but continue processing other items
                 Console.WriteLine($"Failed to get nutrition data for {foodName}: {ex.Message}");
-                
-                // Add a placeholder item
-                result.Items.Add(new NutritionItem
-                {
-                    Name = foodName,
-                    Calories = 0,
-                    ProteinGrams = 0,
-                    CarbsGrams = 0,
-                    FatGrams = 0,
-                    Source = "error"
-                });
+                result.Items.Add(CreateUnknownItem(foodName, "error"));
             }
         }
-        
+
         return result;
+    }
+
+    private static double GetNutrientAmount(FoodDetail detail, int nutrientId)
+    {
+        var nutrient = detail.FoodNutrients.FirstOrDefault(n => n.NutrientId == nutrientId);
+        return nutrient?.Amount ?? 0;
+    }
+
+    private static NutritionItem CreateUnknownItem(string foodName, string source = "unknown")
+    {
+        return new NutritionItem
+        {
+            Name = foodName,
+            Calories = 0,
+            ProteinGrams = 0,
+            CarbsGrams = 0,
+            FatGrams = 0,
+            Source = source
+        };
     }
 }

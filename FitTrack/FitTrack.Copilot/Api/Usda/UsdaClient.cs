@@ -22,7 +22,7 @@ public class UsdaClient : IUsdaClient
             PageSize = 1
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Get, $"foods/search?api_key={_options.ApiKey}")
+        using var req = new HttpRequestMessage(HttpMethod.Post, $"foods/search?api_key={_options.ApiKey}")
         {
             Content = JsonContent.Create(body)
         };

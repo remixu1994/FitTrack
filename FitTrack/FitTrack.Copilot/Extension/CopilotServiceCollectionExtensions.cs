@@ -1,11 +1,14 @@
-﻿using Azure;
+using Azure;
 using Azure.AI.OpenAI;
 using FitTrack.Copilot.Abstractions;
-using FitTrack.Copilot.Agent;
 using FitTrack.Copilot.Middleware;
+using FitTrack.Copilot.MAF.Agents;
+using FitTrack.Copilot.MAF.Skills;
 using FitTrack.Copilot.SemanticKernel.Orchestrator;
 using FitTrack.Copilot.SemanticKernel.Plugins;
+using FitTrack.Copilot.SemanticKernel.RAG;
 using FitTrack.Copilot.SemanticKernel.Tooling;
+using FitTrack.Copilot.Service;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.SemanticKernel;
@@ -21,14 +24,23 @@ public static class CopilotServiceCollectionExtensions
         services.AddSingleton<PromptLoader>();
         services.AddChatClient(configuration);
         
-        // Register new plugin architecture
-        services.AddTransient<VisionFoodRecognitionPlugin>();
-        services.AddTransient<NutritionPlugin>();
-        services.AddTransient<FoodNutritionOrchestrator>();
+        // Register MAF services
+        services.AddTransient<FitnessAgent>();
+        services.AddTransient<MAF.Skills.FitnessSkill>();
+        services.AddTransient<MAF.Skills.NutritionSkill>();
         
-        // Updated agent registration
-        services.AddTransient<ImageNutritionAgent>();
-        services.AddScoped<IAgent>(sp => sp.GetRequiredService<ImageNutritionAgent>());
+        // Register Semantic Kernel plugins
+        services.AddTransient<VisionFoodRecognitionPlugin>();
+        services.AddTransient<TextFoodRecognitionPlugin>();
+        services.AddTransient<NutritionPlugin>();
+        services.AddTransient<WorkoutPlugin>();
+        services.AddTransient<HealthDataPlugin>();
+        
+        // Register RAG service
+        services.AddTransient<FitnessRAGService>();
+        
+        // Register orchestrators
+        services.AddTransient<FoodNutritionOrchestrator>();
         
         return services;
     }

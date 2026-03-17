@@ -1,6 +1,7 @@
 using FitTrack.Copilot.Abstractions.Models;
 using FitTrack.Copilot.SemanticKernel.Plugins;
 using FitTrack.Copilot.SemanticKernel.RAG;
+using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using System.ComponentModel;
 
@@ -8,11 +9,14 @@ namespace FitTrack.Copilot.MAF.Agents;
 
 public class FitnessAgent
 {
+    private const string DefaultUserId = "default";
+
     private readonly IChatClient _chatClient;
     private readonly NutritionPlugin _nutritionPlugin;
     private readonly WorkoutPlugin _workoutPlugin;
     private readonly HealthDataPlugin _healthDataPlugin;
     private readonly FitnessRAGService _ragService;
+    private readonly AIAgent _agent;
 
     public FitnessAgent(
         IChatClient chatClient,
@@ -26,338 +30,212 @@ public class FitnessAgent
         _workoutPlugin = workoutPlugin;
         _healthDataPlugin = healthDataPlugin;
         _ragService = ragService;
+
+        _agent = _chatClient.AsAIAgent(
+            "fitness-agent",
+            "A fitness, nutrition, and health assistant for FitTrack users.",
+            """
+            You are FitTrack's fitness copilot.
+
+            Your job is to help users with:
+            - food and nutrition analysis
+            - workout planning and exercise instructions
+            - workout logging and workout history
+            - body metrics, BMI, calorie needs, and health reports
+
+            Rules:
+            - Prefer tools for factual answers and data operations.
+            - If a request needs user data, use the default user id unless the user explicitly provides another one.
+            - If required inputs are missing, ask a concise follow-up question instead of guessing.
+            - Use the knowledge-base search tool for broader educational fitness questions.
+            - Keep answers practical and concise.
+            """,
+            BuildTools());
     }
 
     [Description("Main entry point for fitness-related queries")]
     public async Task<string> HandleFitnessQueryAsync(string query, CancellationToken cancellationToken = default)
     {
-        var queryLower = query.ToLower();
-
-        if (queryLower.Contains("food") || queryLower.Contains("eat") || queryLower.Contains("nutrition") || queryLower.Contains("calories") || queryLower.Contains("protein"))
-        {
-            return await HandleNutritionQueryAsync(query, cancellationToken);
-        }
-        else if (queryLower.Contains("workout") || queryLower.Contains("exercise") || queryLower.Contains("train") || queryLower.Contains("fitness") || queryLower.Contains("gym"))
-        {
-            return await HandleWorkoutQueryAsync(query, cancellationToken);
-        }
-        else if (queryLower.Contains("weight") || queryLower.Contains("bmi") || queryLower.Contains("health") || queryLower.Contains("body") || queryLower.Contains("report"))
-        {
-            return await HandleHealthQueryAsync(query, cancellationToken);
-        }
-        else
-        {
-            return await HandleGeneralQueryAsync(query, cancellationToken);
-        }
-    }
-
-    private async Task<string> HandleNutritionQueryAsync(string query, CancellationToken ct)
-    {
-        var queryLower = query.ToLower();
-
-        if (queryLower.Contains("analyze") || queryLower.Contains("what") || queryLower.Contains("how many"))
-        {
-            var foods = ExtractFoods(query);
-            if (foods.Any())
+        var response = await _agent.RunAsync(
+            new[]
             {
-                var result = await _nutritionPlugin.GetNutritionAsync(foods, ct);
-                return FormatNutritionResult(result);
-            }
-        }
+                new ChatMessage(ChatRole.User, query)
+            },
+            cancellationToken: cancellationToken);
 
-        if (queryLower.Contains("protein") || queryLower.Contains("carbs") || queryLower.Contains("fat"))
-        {
-            return await _ragService.GetNutritionInfoAsync(query, ct);
-        }
-
-        var messages = new List<ChatMessage>
-        {
-            new(ChatRole.System, @"You are a nutrition expert. Help users with:
-- Food nutrition analysis
-- Calorie counting
-- Macronutrient guidance
-- Meal planning
-- Dietary recommendations
-
-Provide practical, evidence-based advice."),
-            new(ChatRole.User, query)
-        };
-
-        var response = await _chatClient.GetResponseAsync(messages, cancellationToken: ct);
         return response.Text ?? "No response";
     }
 
-    private async Task<string> HandleWorkoutQueryAsync(string query, CancellationToken ct)
+    private IList<AITool> BuildTools()
     {
-        var queryLower = query.ToLower();
-
-        if (queryLower.Contains("plan") || queryLower.Contains("recommend") || queryLower.Contains("suggest"))
-        {
-            var (level, goal) = ExtractFitnessLevelAndGoal(query);
-            return await _workoutPlugin.GetWorkoutPlanRecommendationAsync(level, goal, ct);
-        }
-
-        if (queryLower.Contains("how to") || queryLower.Contains("form") || queryLower.Contains("instruction"))
-        {
-            var exerciseName = ExtractExerciseName(query);
-            if (!string.IsNullOrEmpty(exerciseName))
-            {
-                return await _workoutPlugin.GetExerciseInstructionsAsync(exerciseName, ct);
-            }
-            return await _ragService.GetExerciseInfoAsync(query, ct);
-        }
-
-        if (queryLower.Contains("log") || queryLower.Contains("record") || queryLower.Contains("track"))
-        {
-            return await HandleWorkoutLoggingAsync(query, ct);
-        }
-
-        if (queryLower.Contains("history") || queryLower.Contains("past"))
-        {
-            return await _workoutPlugin.GetWorkoutHistoryAsync("default", 5, ct);
-        }
-
-        var messages = new List<ChatMessage>
-        {
-            new(ChatRole.System, @"You are a fitness expert. Help users with:
-- Workout recommendations
-- Exercise form and instructions
-- Training program design
-- Workout logging
-- Progress tracking
-
-Provide motivating, practical advice."),
-            new(ChatRole.User, query)
-        };
-
-        var response = await _chatClient.GetResponseAsync(messages, cancellationToken: ct);
-        return response.Text ?? "No response";
+        return
+        [
+            AIFunctionFactory.Create(
+                (Func<string, CancellationToken, Task<string>>)AnalyzeNutritionAsync,
+                "analyze_nutrition",
+                "Analyze foods and return calories and macronutrients for the given food description."),
+            AIFunctionFactory.Create(
+                (Func<string, string, CancellationToken, Task<string>>)GetWorkoutPlanAsync,
+                "get_workout_plan",
+                "Recommend a workout plan using fitness level and goal. Valid levels: beginner, intermediate, advanced. Valid goals: weight_loss, muscle_gain, endurance, general_fitness."),
+            AIFunctionFactory.Create(
+                (Func<string, CancellationToken, Task<string>>)GetExerciseInstructionsAsync,
+                "get_exercise_instructions",
+                "Return exercise form and instructions for a named exercise."),
+            AIFunctionFactory.Create(
+                (Func<int, double?, string?, CancellationToken, Task<string>>)LogWorkoutAsync,
+                "log_workout",
+                "Log a completed workout session for the current user with duration in minutes, optional calories burned, and optional notes."),
+            AIFunctionFactory.Create(
+                (Func<int, CancellationToken, Task<string>>)GetWorkoutHistoryAsync,
+                "get_workout_history",
+                "Get recent workout history for the current user. The count parameter controls how many recent workouts to return."),
+            AIFunctionFactory.Create(
+                (Func<double, double, string>)CalculateBmi,
+                "calculate_bmi",
+                "Calculate BMI from weight in kilograms and height in centimeters."),
+            AIFunctionFactory.Create(
+                (Func<double, int?, CancellationToken, Task<string>>)RecordWeightAsync,
+                "record_weight",
+                "Record the user's body weight in kilograms. Optionally provide daysAgo for backfilled measurements."),
+            AIFunctionFactory.Create(
+                (Func<double, double, int, string, string, string>)CalculateCalorieNeeds,
+                "calculate_calorie_needs",
+                "Calculate calorie needs using weightKg, heightCm, age, gender, and activityLevel."),
+            AIFunctionFactory.Create(
+                (Func<double?, CancellationToken, Task<string>>)GenerateHealthReportAsync,
+                "generate_health_report",
+                "Generate a health report for the current user. Optionally provide height in centimeters; defaults to 170."),
+            AIFunctionFactory.Create(
+                (Func<string, CancellationToken, Task<string>>)SearchFitnessKnowledgeAsync,
+                "search_fitness_knowledge",
+                "Search the fitness knowledge base for general guidance, educational content, or broader fitness questions."),
+            AIFunctionFactory.Create(
+                (Func<string, CancellationToken, Task<string>>)GetExerciseKnowledgeAsync,
+                "get_exercise_knowledge",
+                "Get exercise knowledge-base content when specific exercise instructions are not in the standard workout tool."),
+            AIFunctionFactory.Create(
+                (Func<string, CancellationToken, Task<string>>)GetNutritionKnowledgeAsync,
+                "get_nutrition_knowledge",
+                "Get nutrition knowledge-base content for general topics like protein, carbs, meal timing, and recovery nutrition.")
+        ];
     }
 
-    private async Task<string> HandleWorkoutLoggingAsync(string query, CancellationToken ct)
+    private async Task<string> AnalyzeNutritionAsync(string foodDescription, CancellationToken ct)
     {
-        var durationMatch = System.Text.RegularExpressions.Regex.Match(query, @"(\d+)\s*(minute|min|hour|hr)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        var caloriesMatch = System.Text.RegularExpressions.Regex.Match(query, @"(\d+)\s*(cal|kcal)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-        if (durationMatch.Success)
+        var foods = ExtractFoods(foodDescription);
+        if (foods.Count == 0)
         {
-            var duration = int.Parse(durationMatch.Groups[1].Value);
-            var calories = caloriesMatch.Success ? double.Parse(caloriesMatch.Groups[1].Value) : (double?)null;
-
-            return await _workoutPlugin.LogWorkoutSessionAsync(
-                "default",
-                "General Workout",
-                duration,
-                calories,
-                null,
-                ct);
+            foods.Add(foodDescription);
         }
 
-        return "I couldn't understand the workout details. Please provide duration (e.g., '30 minutes') and optionally calories burned.";
+        var result = await _nutritionPlugin.GetNutritionAsync(foods, ct);
+        return FormatNutritionResult(result);
     }
 
-    private async Task<string> HandleHealthQueryAsync(string query, CancellationToken ct)
+    private Task<string> GetWorkoutPlanAsync(string fitnessLevel, string fitnessGoal, CancellationToken ct)
+        => _workoutPlugin.GetWorkoutPlanRecommendationAsync(fitnessLevel, fitnessGoal, ct);
+
+    private async Task<string> GetExerciseInstructionsAsync(string exerciseName, CancellationToken ct)
     {
-        var queryLower = query.ToLower();
-
-        if (queryLower.Contains("bmi"))
-        {
-            var weightMatch = System.Text.RegularExpressions.Regex.Match(query, @"(\d+(?:\.\d+)?)\s*kg", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            var heightMatch = System.Text.RegularExpressions.Regex.Match(query, @"(\d+(?:\.\d+)?)\s*cm", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-            if (weightMatch.Success && heightMatch.Success)
-            {
-                var weight = double.Parse(weightMatch.Groups[1].Value);
-                var height = double.Parse(heightMatch.Groups[1].Value);
-                return _healthDataPlugin.CalculateBMI(weight, height);
-            }
-
-            return "To calculate BMI, please provide both weight (e.g., 70kg) and height (e.g., 175cm).";
-        }
-
-        if (queryLower.Contains("report") || queryLower.Contains("summary") || queryLower.Contains("status"))
-        {
-            var heightMatch = System.Text.RegularExpressions.Regex.Match(query, @"(\d+(?:\.\d+)?)\s*cm", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            var height = heightMatch.Success ? double.Parse(heightMatch.Groups[1].Value) : 170.0;
-
-            return await _healthDataPlugin.GenerateHealthReportAsync("default", height, ct);
-        }
-
-        if (queryLower.Contains("calorie") || queryLower.Contains("tdee"))
-        {
-            return HandleCalorieCalculation(query);
-        }
-
-        if (queryLower.Contains("weight"))
-        {
-            var weightMatch = System.Text.RegularExpressions.Regex.Match(query, @"(\d+(?:\.\d+)?)\s*kg", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            if (weightMatch.Success)
-            {
-                var weight = double.Parse(weightMatch.Groups[1].Value);
-                return await _healthDataPlugin.RecordWeightAsync("default", weight, null, ct);
-            }
-        }
-
-        var messages = new List<ChatMessage>
-        {
-            new(ChatRole.System, @"You are a health expert. Help users with:
-- Weight tracking and BMI calculation
-- Health reports and summaries
-- Calorie needs calculation
-- Body composition advice
-
-Provide accurate, encouraging advice."),
-            new(ChatRole.User, query)
-        };
-
-        var response = await _chatClient.GetResponseAsync(messages, cancellationToken: ct);
-        return response.Text ?? "No response";
+        var instructions = await _workoutPlugin.GetExerciseInstructionsAsync(exerciseName, ct);
+        return instructions.Contains("not found", StringComparison.OrdinalIgnoreCase)
+            ? await _ragService.GetExerciseInfoAsync(exerciseName, ct)
+            : instructions;
     }
 
-    private string HandleCalorieCalculation(string query)
+    private Task<string> LogWorkoutAsync(int durationMinutes, double? caloriesBurned, string? notes, CancellationToken ct)
+        => _workoutPlugin.LogWorkoutSessionAsync(
+            DefaultUserId,
+            "General Workout",
+            durationMinutes,
+            caloriesBurned,
+            notes,
+            ct);
+
+    private Task<string> GetWorkoutHistoryAsync(int count, CancellationToken ct)
+        => _workoutPlugin.GetWorkoutHistoryAsync(DefaultUserId, count, ct);
+
+    private string CalculateBmi(double weightKg, double heightCm)
+        => _healthDataPlugin.CalculateBMI(weightKg, heightCm);
+
+    private Task<string> RecordWeightAsync(double weightKg, int? daysAgo, CancellationToken ct)
     {
-        var weightMatch = System.Text.RegularExpressions.Regex.Match(query, @"(\d+(?:\.\d+)?)\s*kg", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        var heightMatch = System.Text.RegularExpressions.Regex.Match(query, @"(\d+(?:\.\d+)?)\s*cm", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        var ageMatch = System.Text.RegularExpressions.Regex.Match(query, @"(\d+)\s*(year|yr|age)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        var genderMatch = System.Text.RegularExpressions.Regex.Match(query, @"\b(male|female|man|woman)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        var activityMatch = System.Text.RegularExpressions.Regex.Match(query, @"\b(sedentary|light|moderate|active|very_active)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        DateTime? measurementDate = daysAgo.HasValue
+            ? DateTime.UtcNow.AddDays(-daysAgo.Value)
+            : null;
 
-        if (weightMatch.Success && heightMatch.Success && ageMatch.Success && genderMatch.Success)
-        {
-            var weight = double.Parse(weightMatch.Groups[1].Value);
-            var height = double.Parse(heightMatch.Groups[1].Value);
-            var age = int.Parse(ageMatch.Groups[1].Value);
-            var gender = genderMatch.Groups[1].Value;
-            var activity = activityMatch.Success ? activityMatch.Value : "moderate";
-
-            return _healthDataPlugin.CalculateCalorieNeeds(weight, height, age, gender, activity);
-        }
-
-        return "To calculate calorie needs, please provide:\n- Weight (e.g., 70kg)\n- Height (e.g., 175cm)\n- Age (e.g., 30 years)\n- Gender (male/female)\n- Activity level (sedentary/light/moderate/active/very_active)";
+        return _healthDataPlugin.RecordWeightAsync(DefaultUserId, weightKg, measurementDate, ct);
     }
 
-    private async Task<string> HandleGeneralQueryAsync(string query, CancellationToken ct)
-    {
-        var ragResult = await _ragService.SearchAsync(query, ct);
-        
-        if (ragResult.Contains("No matching"))
-        {
-            var messages = new List<ChatMessage>
-            {
-                new(ChatRole.System, @"You are a friendly and knowledgeable fitness and nutrition coach. 
+    private string CalculateCalorieNeeds(double weightKg, double heightCm, int age, string gender, string activityLevel)
+        => _healthDataPlugin.CalculateCalorieNeeds(weightKg, heightCm, age, gender, activityLevel);
 
-You can help users with:
-- Nutrition and diet advice
-- Workout recommendations and exercise form
-- Weight tracking and health metrics
-- Fitness goal setting
-- Personalized fitness plans
+    private Task<string> GenerateHealthReportAsync(double? heightCm, CancellationToken ct)
+        => _healthDataPlugin.GenerateHealthReportAsync(DefaultUserId, heightCm ?? 170d, ct);
 
-Be encouraging, practical, and provide actionable advice."),
-                new(ChatRole.User, query)
-            };
+    private Task<string> SearchFitnessKnowledgeAsync(string query, CancellationToken ct)
+        => _ragService.SearchAsync(query, ct);
 
-            var response = await _chatClient.GetResponseAsync(messages, cancellationToken: ct);
-            return response.Text ?? "No response";
-        }
+    private Task<string> GetExerciseKnowledgeAsync(string exerciseName, CancellationToken ct)
+        => _ragService.GetExerciseInfoAsync(exerciseName, ct);
 
-        return ragResult;
-    }
+    private Task<string> GetNutritionKnowledgeAsync(string topic, CancellationToken ct)
+        => _ragService.GetNutritionInfoAsync(topic, ct);
 
     private List<string> ExtractFoods(string query)
     {
         var foods = new List<string>();
-        
-        var patterns = new[]
+        var foodNames = new[]
         {
-            @"(\d+(?:\.\d+)?)\s*(g|gram|grams|oz|ounce|ounces|cup|cups|piece|pieces|slice|slices| tbsp| tsp| serving)",
-            @"(\d+(?:\.\d+)?)\s*(chicken|rice|egg|apple|banana|meat|fish|vegetable|fruit|bread|pasta)"
+            "chicken", "rice", "egg", "apple", "banana", "beef", "fish", "salmon", "tuna",
+            "broccoli", "spinach", "carrot", "potato", "bread", "pasta", "milk", "yogurt",
+            "cheese", "tofu", "bean"
         };
-
-        var foodNames = new[] { "chicken", "rice", "egg", "apple", "banana", "beef", "fish", "salmon", "tuna", "broccoli", "spinach", "carrot", "potato", "bread", "pasta", "milk", "yogurt", "cheese", "tofu", "bean" };
 
         foreach (var food in foodNames)
         {
-            if (query.ToLower().Contains(food))
+            if (!query.Contains(food, StringComparison.OrdinalIgnoreCase))
             {
-                var match = System.Text.RegularExpressions.Regex.Match(query, $@"(\d+(?:\.\d+)?)\s*(g|gram|grams|oz)?\s*{food}", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                if (match.Success)
-                {
-                    foods.Add(match.Value);
-                }
-                else
-                {
-                    foods.Add(food);
-                }
+                continue;
             }
+
+            var match = System.Text.RegularExpressions.Regex.Match(
+                query,
+                $@"(\d+(?:\.\d+)?)\s*(g|gram|grams|oz|ounce|ounces|cup|cups|piece|pieces|slice|slices|tbsp|tsp|serving)?\s*{food}",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            foods.Add(match.Success ? match.Value : food);
         }
 
-        return foods.Distinct().ToList();
+        return foods.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
 
-    private (string level, string goal) ExtractFitnessLevelAndGoal(string query)
-    {
-        var level = "intermediate";
-        var goal = "general_fitness";
-
-        var levels = new[] { "beginner", "intermediate", "advanced" };
-        foreach (var l in levels)
-        {
-            if (query.ToLower().Contains(l))
-            {
-                level = l;
-                break;
-            }
-        }
-
-        if (query.ToLower().Contains("weight_loss") || query.ToLower().Contains("lose weight") || query.ToLower().Contains("fat loss") || query.ToLower().Contains("slim"))
-            goal = "weight_loss";
-        else if (query.ToLower().Contains("muscle") || query.ToLower().Contains("gain") || query.ToLower().Contains("build"))
-            goal = "muscle_gain";
-        else if (query.ToLower().Contains("endurance") || query.ToLower().Contains("cardio") || query.ToLower().Contains("run"))
-            goal = "endurance";
-
-        return (level, goal);
-    }
-
-    private string ExtractExerciseName(string query)
-    {
-        var exercises = new[] { "squat", "bench press", "deadlift", "pull-up", "push-up", "plank", "lunge", "row", "curl", "press" };
-        
-        foreach (var ex in exercises)
-        {
-            if (query.ToLower().Contains(ex))
-            {
-                return ex;
-            }
-        }
-
-        return string.Empty;
-    }
-
-    private string FormatNutritionResult(NutritionResult result)
+    private static string FormatNutritionResult(NutritionResult result)
     {
         if (result.Items.Count == 0)
         {
             return "No nutrition data found for the specified foods.";
         }
 
-        var output = "🥗 Nutrition Analysis:\n\n";
-        
+        var output = "Nutrition Analysis:\n\n";
+
         foreach (var item in result.Items)
         {
             output += $"**{item.Name}**\n";
-            output += $"  Calories: {item.Calories:F0} kcal\n";
-            output += $"  Protein: {item.ProteinGrams:F1}g\n";
-            output += $"  Carbs: {item.CarbsGrams:F1}g\n";
-            output += $"  Fat: {item.FatGrams:F1}g\n";
-            if (!string.IsNullOrEmpty(item.ServingHint))
-                output += $"  Serving: {item.ServingHint}\n";
+            output += $"Calories: {item.Calories:F0} kcal\n";
+            output += $"Protein: {item.ProteinGrams:F1}g\n";
+            output += $"Carbs: {item.CarbsGrams:F1}g\n";
+            output += $"Fat: {item.FatGrams:F1}g\n";
+            if (!string.IsNullOrWhiteSpace(item.ServingHint))
+            {
+                output += $"Serving: {item.ServingHint}\n";
+            }
+
             output += "\n";
         }
 
-        output += $"**Total: {result.TotalCalories:F0} kcal**";
-        
+        output += $"Total: {result.TotalCalories:F0} kcal";
         return output;
     }
 }

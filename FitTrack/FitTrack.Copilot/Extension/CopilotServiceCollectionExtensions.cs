@@ -26,6 +26,7 @@ public static class CopilotServiceCollectionExtensions
         
         // Register MAF services
         services.AddTransient<FitnessAgent>();
+        services.AddTransient<ImageCalorieAgent>();
         services.AddTransient<MAF.Skills.FitnessSkill>();
         services.AddTransient<MAF.Skills.NutritionSkill>();
         
@@ -41,6 +42,8 @@ public static class CopilotServiceCollectionExtensions
         
         // Register orchestrators
         services.AddTransient<FoodNutritionOrchestrator>();
+        services.AddTransient<IFoodAiService, FoodAiService>();
+        services.AddTransient<ICopilotChatService, CopilotChatService>();
         
         return services;
     }

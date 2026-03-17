@@ -1,58 +1,71 @@
-﻿@page "/chat"
-@using System.Text
+@page "/chat"
 @using FitTrack.Copilot.Abstractions.Models
 @using FitTrack.Copilot.Service
 @using Microsoft.AspNetCore.Components.Forms
-@inject IFoodAiService FoodAi
-@inject IDialogService Dialog
 @inject ISnackbar Snackbar
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mx-auto py-6 px-4">
-  <MudPaper Class="p-4 rounded-2xl">
-    <!-- Header -->
-    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
-      <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
-        <MudAvatar Icon="@Icons.Material.Filled.Restaurant" Size="Size.Medium" Color="Color.Primary"/>
-        <MudText Typo="Typo.h6">Calorie Chat</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">Chat-style Food Recognition</MudText>
-      </MudStack>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="chat-root py-6">
+  <MudPaper Class="chat-shell">
+    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="chat-header">
+      <div>
+        <MudText Typo="Typo.h5">FitTrack Copilot</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+          Chat with the fitness agent, or send a meal image to the calorie agent.
+        </MudText>
+      </div>
 
       <MudStack Row Spacing="1">
-        <MudIconButton Icon="@Icons.Material.Filled.History" Title="Sample" OnClick="InsertSample"/>
-        <MudIconButton Icon="@Icons.Material.Filled.DeleteSweep" Title="Clear chat" Color="Color.Error"
-                       OnClick="ClearChat"/>
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.AutoAwesome" OnClick="InsertFitnessSample">
+          Fitness Sample
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Restaurant" OnClick="InsertMealSample">
+          Meal Sample
+        </MudButton>
+        <MudIconButton Icon="@Icons.Material.Filled.DeleteSweep" Color="Color.Error" OnClick="ClearChat"/>
       </MudStack>
     </MudStack>
 
-    <!-- Message list -->
-    <MudDivider Class="mb-3"/>
+    <MudPaper Class="agent-banner" Elevation="0">
+      <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+        <MudChip T="string" Color="@(HasPendingImage ? Color.Warning : Color.Primary)" Variant="Variant.Filled">
+          @(HasPendingImage ? "Image Calorie Agent" : "Fitness Agent")
+        </MudChip>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+          @(HasPendingImage
+              ? "An uploaded image will route this turn to the image calorie agent."
+              : "Text-only prompts go to the fitness agent.")
+        </MudText>
+      </MudStack>
+    </MudPaper>
+
     <div class="chat-scroll">
       @foreach (var m in Messages)
       {
         <div class="chat-row @(m.Role == Role.User ? "me" : "bot")">
-          <MudPaper Class="chat-bubble">
+          <MudPaper Class="chat-bubble" Elevation="0">
             <MudStack Spacing="1">
               <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
                 <MudAvatar Icon="@(m.Role == Role.User ? Icons.Material.Filled.Person : Icons.Material.Filled.SmartToy)"
                            Color="@(m.Role == Role.User ? Color.Primary : Color.Secondary)" Size="Size.Small"/>
-                <MudText
-                  Typo="Typo.caption">@((m.Role == Role.User ? "You" : "FitTrack AI")) · @m.Time.ToLocalTime().ToString("HH:mm")</MudText>
+                <MudText Typo="Typo.caption">
+                  @(m.Role == Role.User ? "You" : m.AgentName ?? "Copilot") · @m.Time.ToLocalTime().ToString("HH:mm")
+                </MudText>
               </MudStack>
 
               @if (!string.IsNullOrWhiteSpace(m.Text))
               {
-                <MudText Typo="Typo.body1">@m.Text</MudText>
+                <MudText Typo="Typo.body1" Class="chat-text">@m.Text</MudText>
               }
 
-              @if (!string.IsNullOrEmpty(m.ImageDataUrl))
+              @if (!string.IsNullOrWhiteSpace(m.ImageDataUrl))
               {
-                <MudImage Src="@m.ImageDataUrl" Alt="uploaded" Elevation="0" Class="rounded-xl max-w-img"/>
+                <MudImage Src="@m.ImageDataUrl" Alt="uploaded meal image" Class="chat-img"/>
               }
 
               @if (m.Status == MessageStatus.Loading)
               {
                 <MudSkeleton SkeletonType="SkeletonType.Text" Height="20px"/>
-                <MudSkeleton SkeletonType="SkeletonType.Text" Width="70%" Height="20px"/>
+                <MudSkeleton SkeletonType="SkeletonType.Text" Width="68%" Height="20px"/>
               }
 
               @if (m.Nutrition is not null)
@@ -60,7 +73,7 @@
                 <NutritionCard Result="m.Nutrition"/>
               }
 
-              @if (m.Error is not null)
+              @if (!string.IsNullOrWhiteSpace(m.Error))
               {
                 <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">@m.Error</MudAlert>
               }
@@ -68,56 +81,52 @@
           </MudPaper>
         </div>
       }
-      <div id="chat-bottom"/>
     </div>
 
-    <!-- Composer -->
-    <MudDivider Class="my-3" />
     <div class="chat-composer">
       @if (PreviewImage is not null)
       {
-        <div class="image-preview">
-          <MudImage Src="@PreviewImage" Alt="preview" Class="preview-thumb" />
-          <MudIconButton Icon="@Icons.Material.Filled.Close"
-                         Color="Color.Error"
-                         Class="preview-close"
-                         Size="Size.Small"
-                         OnClick="()=>PreviewImage=null" />
-          <MudText Typo="Typo.caption" Color="Color.Secondary" Class="preview-hint">
-            Image selected (not yet sent)
-          </MudText>
-        </div>
+        <MudPaper Class="image-preview-card" Elevation="0">
+          <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+            <MudImage Src="@PreviewImage" Alt="preview" Class="preview-thumb"/>
+            <div class="flex-1">
+              <MudText Typo="Typo.subtitle2">Image ready</MudText>
+              <MudText Typo="Typo.caption" Color="Color.Secondary">
+                This message will use the image calorie agent.
+              </MudText>
+            </div>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error" OnClick="ClearPendingImage"/>
+          </MudStack>
+        </MudPaper>
       }
 
-      <MudStack Row Spacing="2" AlignItems="AlignItems.Center">
-        <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles">
+      <MudStack Row Spacing="2" AlignItems="AlignItems.End">
+        <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles" Accept="image/*">
           <ActivatorContent>
             <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       StartIcon="@Icons.Material.Filled.CloudUpload">
+                       Color="@(HasPendingImage ? Color.Warning : Color.Primary)"
+                       StartIcon="@Icons.Material.Filled.AddPhotoAlternate">
+              Photo
             </MudButton>
           </ActivatorContent>
         </MudFileUpload>
 
         <MudTextField @bind-Value="InputText"
-                      Lines="1"
-                      Placeholder="Describe your food (or send an image)…"
+                      Placeholder="Ask about workouts, nutrition, BMI, or add context for a meal image..."
+                      Lines="2"
+                      AutoGrow="true"
+                      MaxLines="5"
                       Class="flex-1"
-                      Adornment="Adornment.Start"
                       Immediate="true"
                       OnKeyDown="OnKeyDown" />
 
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    Disabled="@IsSending"
-                   OnClick="Send">Send</MudButton>
+                   OnClick="Send">
+          Send
+        </MudButton>
       </MudStack>
     </div>
   </MudPaper>
 </MudContainer>
-
-@code {
-
-  // ---------------- Models ----------------
-
-}

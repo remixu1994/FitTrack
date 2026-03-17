@@ -1,12 +1,39 @@
-﻿.chat-scroll {
-    max-height: calc(100vh - 280px);
-    overflow: auto;
-    padding: 4px 0 8px 0;
+.chat-root {
+    min-height: calc(100vh - 96px);
+}
+
+.chat-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at top right, rgba(53, 99, 233, 0.08), transparent 28%),
+        linear-gradient(180deg, rgba(248, 250, 255, 0.98), rgba(255, 255, 255, 0.98));
+}
+
+.chat-header {
+    gap: 16px;
+}
+
+.agent-banner {
+    padding: 12px 16px;
+    border-radius: 16px;
+    background: rgba(12, 30, 64, 0.04);
+    border: 1px solid rgba(12, 30, 64, 0.08);
+}
+
+.chat-scroll {
+    min-height: 420px;
+    max-height: calc(100vh - 360px);
+    overflow-y: auto;
+    padding: 8px 4px;
 }
 
 .chat-row {
     display: flex;
-    margin: 8px 0;
+    margin: 10px 0;
 }
 
 .chat-row.me {
@@ -18,98 +45,68 @@
 }
 
 .chat-bubble {
-    max-width: min(780px, 80%);
-    padding: 12px 14px;
-    border-radius: 16px;
+    max-width: min(860px, 84%);
+    padding: 14px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: white;
 }
 
-/* 聊天内容区：自己已有的 chat-scroll 建议略调高度 */
-.chat-scroll {
-    max-height: calc(100vh - 320px); /* 依据你的头部和边距可再微调 */
-    overflow-y: auto;
-    padding-bottom: 8px;
+.chat-row.me .chat-bubble {
+    background: linear-gradient(180deg, #eef4ff, #f8fbff);
 }
 
-/* 输入区固定在底部，类似 ChatGPT */
+.chat-row.bot .chat-bubble {
+    background: linear-gradient(180deg, #ffffff, #fbfcfe);
+}
+
+.chat-text {
+    white-space: pre-wrap;
+}
+
+.chat-img {
+    max-width: 360px;
+    border-radius: 14px;
+}
+
 .chat-composer {
-    position: sticky;
-    bottom: 0;
-    padding-top: 8px;
-    padding-bottom: 12px;
-    z-index: 10;
-    border-top: 1px solid rgba(0,0,0,.06);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
 }
 
-/* 预览缩略图 */
-.image-preview {
-    position: relative;
-    width: max-content;
-    margin: 4px auto 8px auto;   /* 居中放在输入框上方 */
+.image-preview-card {
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(255, 244, 214, 0.45);
+    border: 1px solid rgba(201, 138, 0, 0.18);
 }
 
 .preview-thumb {
-    width: 120px;                /* 小图尺寸 */
-    height: 120px;
+    width: 88px;
+    height: 88px;
     object-fit: cover;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.15);
-    display: block;
 }
 
-.preview-close {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    background-color: white;
-    border-radius: 50%;
-    box-shadow: 0 1px 4px rgba(0,0,0,.2);
-}
-
-.preview-hint {
-    text-align: center;
-    margin-top: 4px;
-    display: block;
-    opacity: .85;
-}
-
-
-/* 外层列布局：撑满视口高度（容器外若有 AppBar，需要自行减去高度） */
-.chat-root {
-    height: 100vh;               /* 如被外层布局限制，可换 100dvh + fallback */
-    display: flex;
-    flex-direction: column;
-}
-
-/* 主体区域：内部再做一层列布局 */
-.chat-main {
+.flex-1 {
     flex: 1 1 auto;
-    min-height: 0;               /* 关键：允许子元素计算可滚动高度 */
-    display: flex;
-    flex-direction: column;
 }
 
-/* 中间消息列表：由 MudStack 承担滚动容器 */
-.chat-scroll {
-    flex: 1 1 auto;
-    min-height: 0;               /* 关键 */
-    overflow-y: auto;
-    padding: 8px 4px;
+@media (max-width: 900px) {
+    .chat-shell {
+        padding: 14px;
+        border-radius: 18px;
+    }
+
+    .chat-bubble {
+        max-width: 100%;
+    }
+
+    .chat-scroll {
+        max-height: none;
+        min-height: 360px;
+    }
 }
-
-/* 底部输入区：不滚动 */
-.chat-composer {
-    flex: 0 0 auto;
-}
-
-/* 对话行与气泡（保留原样式） */
-.chat-row { display:flex; margin:8px 0; }
-.chat-row.me { justify-content:flex-end; }
-.chat-row.bot { justify-content:flex-start; }
-.chat-bubble { max-width:min(900px,100%); padding:12px 14px; border-radius:16px;  }
-.chat-img { max-width:420px; height:auto; border-radius:12px; }
-
-/* 预览缩略图 */
-.image-preview{ position:relative; width:max-content; margin:6px 0 2px 0; }
-.preview-thumb{ width:120px; height:120px; object-fit:cover; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.15); display:block; }
-.preview-close{ position:absolute; top:-6px; right:-6px; background:#fff; border-radius:50%; box-shadow:0 1px 4px rgba(0,0,0,.2); }
-.preview-hint{ text-align:center; margin-top:4px; opacity:.85; }

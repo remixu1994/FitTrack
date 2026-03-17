@@ -1,104 +1,118 @@
-﻿using FitTrack.Copilot.Abstractions.Models;
+using FitTrack.Copilot.Abstractions.Models;
 using FitTrack.Copilot.Service;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
-using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace FitTrack.Copilot.Components.Pages;
 
 public partial class Chat
 {
-    private List<ChatMessage> Messages = new();
+    private List<ChatTurn> Messages = [];
     private string? InputText;
     private bool IsSending;
-    private ElementReference? bottomRef;
     private string? PreviewImage;
-    private ElementReference? fileInput;
+
+    [Inject]
+    private ICopilotChatService CopilotChat { get; set; } = default!;
 
     protected override void OnInitialized()
     {
-        Messages.Add(new ChatMessage(Role.Assistant,
-            "Hi! Send a food photo or describe your meal, and I’ll estimate calories & macros."));
+        Messages.Add(new ChatTurn(
+            Role.Assistant,
+            "Hi. Ask a fitness question, or upload a meal photo and I will switch to the image calorie agent.",
+            agentName: "Copilot"));
     }
 
-
-    [Inject]
-    private IJSRuntime JSRuntime { get; set; } = default!;
-
-    private async Task<string?> ReadAsDataUrl(IBrowserFile file)
-    {
-        using var stream = file.OpenReadStream(5 * 1024 * 1024); // 5MB
-        var buffer = new byte[file.Size];
-        await stream.ReadAsync(buffer);
-        var base64 = Convert.ToBase64String(buffer);
-        return $"data:{file.ContentType};base64,{base64}";
-    }
-
-    private async Task OnFileSelected(InputFileChangeEventArgs e)
-    {
-        var file = e.File;
-        if (file is null) return;
-        PreviewImage = await ReadAsDataUrl(file);
-        StateHasChanged();
-    }
+    private bool HasPendingImage => !string.IsNullOrWhiteSpace(PreviewImage);
 
     private async Task Send()
     {
-        if (IsSending) return;
-        if (string.IsNullOrWhiteSpace(InputText) && string.IsNullOrEmpty(PreviewImage))
+        if (IsSending)
         {
-            Snackbar.Add("Please type a description or attach an image.", Severity.Info);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(InputText) && string.IsNullOrWhiteSpace(PreviewImage))
+        {
+            Snackbar.Add("Enter a prompt or upload an image first.", Severity.Info);
             return;
         }
 
         IsSending = true;
 
-        // push user message
-        var userMsg = new ChatMessage(Role.User, InputText ?? string.Empty, PreviewImage);
-        Messages.Add(userMsg);
+        var userTurn = new ChatTurn(Role.User, InputText, PreviewImage, "You");
+        Messages.Add(userTurn);
 
-        // push assistant placeholder (loading)
-        var aiMsg = new ChatMessage(Role.Assistant, null, null) { Status = MessageStatus.Loading };
-        Messages.Add(aiMsg);
-        ScrollToBottom();
+        var assistantTurn = new ChatTurn(Role.Assistant, null, null, HasPendingImage ? "Image Calorie Agent" : "Fitness Agent")
+        {
+            Status = MessageStatus.Loading
+        };
+        Messages.Add(assistantTurn);
 
         try
         {
-            // Call AI
-            var result = await FoodAi.AnalyzeAsync(new FoodRequest
+            var response = await CopilotChat.SendAsync(new CopilotChatRequest
             {
                 Text = InputText,
                 ImageDataUrl = PreviewImage
             });
 
-            aiMsg.Status = MessageStatus.Done;
-            aiMsg.Nutrition = result;
+            assistantTurn.Status = MessageStatus.Done;
+            assistantTurn.Text = response.Message;
+            assistantTurn.AgentName = response.AgentName;
+            assistantTurn.Nutrition = response.Nutrition;
         }
         catch (Exception ex)
         {
-            aiMsg.Status = MessageStatus.Error;
-            aiMsg.Error = ex.Message;
+            assistantTurn.Status = MessageStatus.Error;
+            assistantTurn.Error = ex.Message;
         }
         finally
         {
             InputText = string.Empty;
             PreviewImage = null;
             IsSending = false;
-            ScrollToBottom();
         }
     }
 
-    private void InsertSample()
+    private async Task UploadFiles(IBrowserFile? file)
     {
-        InputText = "One bowl of beef noodles with scallions, plus a boiled egg.";
+        if (file is null)
+        {
+            return;
+        }
+
+        using var ms = new MemoryStream();
+        await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(ms);
+        PreviewImage = $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
+    }
+
+    private void ClearPendingImage()
+    {
+        PreviewImage = null;
+    }
+
+    private void InsertFitnessSample()
+    {
+        InputText = "Create a beginner workout plan for muscle gain.";
+    }
+
+    private void InsertMealSample()
+    {
+        InputText = "Estimate this meal and call out any uncertainty in the portion size.";
     }
 
     private void ClearChat()
     {
         Messages.Clear();
-        Messages.Add(new ChatMessage(Role.Assistant, "Chat cleared. Send a food photo or description to begin."));
+        PreviewImage = null;
+        InputText = string.Empty;
+        Messages.Add(new ChatTurn(
+            Role.Assistant,
+            "Chat cleared. Start with a fitness question or upload a meal photo.",
+            agentName: "Copilot"));
     }
 
     private async Task OnKeyDown(KeyboardEventArgs e)
@@ -106,17 +120,6 @@ public partial class Chat
         if (e.Key == "Enter" && !e.ShiftKey)
         {
             await Send();
-        }
-    }
-
-    private async void ScrollToBottom()
-    {
-        try
-        {
-            await JSRuntime.InvokeVoidAsync("fittrackChat.scrollBottom");
-        }
-        catch
-        {
         }
     }
 
@@ -134,41 +137,26 @@ public partial class Chat
         Error
     }
 
-    public class ChatMessage
+    public sealed class ChatTurn
     {
-        public ChatMessage(Role role, string? text, string? image = null)
+        public ChatTurn(Role role, string? text, string? image = null, string? agentName = null)
         {
             Id = Guid.NewGuid().ToString("N");
             Role = role;
             Text = text;
             ImageDataUrl = image;
+            AgentName = agentName;
             Time = DateTimeOffset.Now;
         }
 
         public string Id { get; set; }
         public Role Role { get; set; }
+        public string? AgentName { get; set; }
         public string? Text { get; set; }
         public string? ImageDataUrl { get; set; }
         public DateTimeOffset Time { get; set; }
         public MessageStatus Status { get; set; }
         public NutritionResult? Nutrition { get; set; }
         public string? Error { get; set; }
-    }
-
-
-    private byte[]? _fileBytes;
-    private string? _fileContentType;
-
-    private async Task UploadFiles(IBrowserFile? file)
-    {
-        if (file is null) return;
-
-        using var ms = new MemoryStream();
-        await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(ms);
-        _fileBytes = ms.ToArray();
-        _fileContentType = file.ContentType;
-
-        // preview
-        PreviewImage = $"data:{_fileContentType};base64,{Convert.ToBase64String(_fileBytes)}";
     }
 }

@@ -6,7 +6,12 @@ namespace FitTrack.Copilot.Data;
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
     : IdentityDbContext<ApplicationUser>(options)
 {
-    
+    public DbSet<UserProfile> UserProfiles { get; set; }
+    public DbSet<ConversationThread> ConversationThreads { get; set; }
+    public DbSet<ConversationMessage> ConversationMessages { get; set; }
+    public DbSet<ConversationAttachment> ConversationAttachments { get; set; }
+    public DbSet<NutritionSnapshot> NutritionSnapshots { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<ChatSession> ChatSessions { get; set; }
     public DbSet<ChatSessionMessage> ChatSessionMessages { get; set; }
     public DbSet<FitnessGoal> FitnessGoals { get; set; }
@@ -19,6 +24,95 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<UserProfile>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired();
+            entity.HasIndex(e => e.UserId).IsUnique();
+            entity.HasOne(e => e.User)
+                .WithOne(u => u.Profile)
+                .HasForeignKey<UserProfile>(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ConversationThread>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired();
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.HasIndex(e => new { e.UserId, e.UpdatedAt });
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.ConversationThreads)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ConversationMessage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ThreadId).IsRequired();
+            entity.Property(e => e.Role).IsRequired().HasMaxLength(32);
+            entity.Property(e => e.Kind).IsRequired().HasMaxLength(64);
+            entity.HasIndex(e => new { e.ThreadId, e.TurnIndex }).IsUnique();
+            entity.HasOne(e => e.Thread)
+                .WithMany(e => e.Messages)
+                .HasForeignKey(e => e.ThreadId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ConversationAttachment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ThreadId).IsRequired();
+            entity.Property(e => e.MessageId).IsRequired();
+            entity.Property(e => e.Kind).IsRequired().HasMaxLength(64);
+            entity.Property(e => e.FileName).HasMaxLength(260);
+            entity.Property(e => e.MimeType).HasMaxLength(128);
+            entity.Property(e => e.StoragePath).IsRequired().HasMaxLength(512);
+            entity.HasIndex(e => new { e.ThreadId, e.CreatedAt });
+            entity.HasIndex(e => e.MessageId);
+            entity.HasOne(e => e.Thread)
+                .WithMany()
+                .HasForeignKey(e => e.ThreadId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Message)
+                .WithMany(e => e.Attachments)
+                .HasForeignKey(e => e.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<NutritionSnapshot>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ThreadId).IsRequired();
+            entity.Property(e => e.MessageId).IsRequired();
+            entity.HasIndex(e => new { e.ThreadId, e.CreatedAt });
+            entity.HasIndex(e => e.MessageId).IsUnique();
+            entity.HasOne(e => e.Thread)
+                .WithMany(e => e.Snapshots)
+                .HasForeignKey(e => e.ThreadId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Message)
+                .WithOne(e => e.Snapshot)
+                .HasForeignKey<NutritionSnapshot>(e => e.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired();
+            entity.Property(e => e.TokenHash).IsRequired().HasMaxLength(128);
+            entity.HasIndex(e => e.TokenHash).IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.ExpiresAt });
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<ChatSession>(entity =>
         {
             entity.HasKey(e => e.Id);

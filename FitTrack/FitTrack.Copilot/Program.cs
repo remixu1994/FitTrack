@@ -1,18 +1,16 @@
+using System.Text;
 using FitTrack.Copilot.Api.Usda;
-using Microsoft.AspNetCore.Components.Authorization;
+using FitTrack.Copilot.Configuration;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using FitTrack.Copilot.Components;
-using FitTrack.Copilot.Components.Account;
 using FitTrack.Copilot.Data;
 using FitTrack.Copilot.Endpoints;
 using FitTrack.Copilot.Extension;
-using FitTrack.Copilot.Service;
 using Microsoft.AspNetCore.Http.Features;
-using MudBlazor.Services;
+using Microsoft.IdentityModel.Tokens;
 using NLog;
 using NLog.Config;
-using NLog.Extensions.Logging;
 using NLog.Targets;
 using NLog.Web;
 
@@ -21,9 +19,20 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration
     .AddUserSecrets<Program>();
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddMemoryCache();
+builder.Services.AddProblemDetails();
+builder.Services.AddHealthChecks();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter("api", limiter =>
+    {
+        limiter.PermitLimit = 120;
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.QueueLimit = 0;
+    });
+});
 
 builder.Logging.ClearProviders();
 builder.Host.UseNLog();
@@ -43,29 +52,36 @@ config.AddRule(NLog.LogLevel.Trace, NLog.LogLevel.Fatal, consoleTarget);
 // 应用配置
 LogManager.Configuration = config;
 
-builder.Services.AddNLog();
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
 builder.Services.AddHttpClient("nutrition", client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["Nutrition:BaseUrl"]);
+    client.BaseAddress = new Uri(builder.Configuration["Nutrition:BaseUrl"] ?? builder.Configuration["USDA:BaseUrl"] ?? "https://api.nal.usda.gov/fdc/v1/");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 
-builder.Services.AddCascadingAuthenticationState();
-builder.Services.AddScoped<IdentityUserAccessor>();
-builder.Services.AddScoped<IdentityRedirectManager>();
-builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 
 builder.Services.AddAuthentication(options =>
     {
-        options.DefaultScheme = IdentityConstants.ApplicationScheme;
-        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+        options.DefaultAuthenticateScheme = "Bearer";
+        options.DefaultChallengeScheme = "Bearer";
     })
-    .AddIdentityCookies();
+    .AddJwtBearer("Bearer", options =>
+    {
+        var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            ValidIssuer = jwt.Issuer,
+            ValidAudience = jwt.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
+builder.Services.AddAuthorization();
 
 //Local DataBase
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
@@ -79,7 +95,17 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
-builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("frontend", policy =>
+    {
+        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? ["http://localhost:3000"];
+        policy.WithOrigins(origins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
 
 // USDA Client (must be registered before CopilotServices)
 builder.Services.AddUsdaClient(builder.Configuration);
@@ -87,50 +113,46 @@ builder.Services.AddUsdaClient(builder.Configuration);
 // Semantic Kernel
 builder.Services.AddCopilotServices(builder.Configuration);
 
-// MudBlazor
-builder.Services.AddMudServices();
-builder.Services.AddHttpClient();
-
 builder.Services.Configure<FormOptions>(o =>
 {
     o.MultipartBodyLengthLimit = 20 * 1024 * 1024; // 20MB
 });
 
-builder.Services.AddScoped<IFoodAiService, FoodAiService>();
-builder.Services.AddScoped<IFitnessService, FitnessService>();
-builder.Services.AddScoped<IWorkoutSessionService, WorkoutSessionService>();
-builder.Services.AddScoped<IFoodRecordService, FoodRecordService>();
 var app = builder.Build();
-// app.MapCopilotVision();
-app.MapFood();
-app.MapOpenApi();
-app.UseSwaggerUI(options =>
-{
-    options.SwaggerEndpoint("/openapi/v1.json", "v1");
-});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
+    app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "v1");
+    });
 }
 else
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseExceptionHandler();
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
+app.UseCors("frontend");
+app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
 
-
-app.UseAntiforgery();
-
-app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
-
-// Add additional endpoints required by the Identity /Account Razor components.
-app.MapAdditionalIdentityEndpoints();
+app.MapHealthChecks("/health");
+app.MapAuthEndpoints();
+app.MapProfileEndpoints();
+app.MapChatEndpoints();
+app.MapFoodApiEndpoints();
+app.MapWorkoutApiEndpoints();
+app.MapProgressEndpoints();
+if (app.Environment.IsDevelopment())
+{
+    app.MapInternalAgentToolEndpoints();
+}
+app.MapFood();
 
 app.Run();

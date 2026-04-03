@@ -1,9 +1,8 @@
 using Azure;
 using Azure.AI.OpenAI;
-using FitTrack.Copilot.Abstractions;
+using FitTrack.Copilot.Agents;
 using FitTrack.Copilot.Middleware;
-using FitTrack.Copilot.MAF.Agents;
-using FitTrack.Copilot.MAF.Skills;
+using FitTrack.Copilot.Configuration;
 using FitTrack.Copilot.SemanticKernel.Orchestrator;
 using FitTrack.Copilot.SemanticKernel.Plugins;
 using FitTrack.Copilot.SemanticKernel.RAG;
@@ -21,15 +20,16 @@ public static class CopilotServiceCollectionExtensions
         IConfiguration configuration)
     {
         services.Configure<PromptOptions>(configuration.GetSection("Prompts"));
+        services.Configure<PythonAgentOptions>(configuration.GetSection(PythonAgentOptions.SectionName));
         services.AddSingleton<PromptLoader>();
         services.AddChatClient(configuration);
-        
-        // Register MAF services
-        services.AddTransient<FitnessAgent>();
-        services.AddTransient<ImageCalorieAgent>();
-        services.AddTransient<MAF.Skills.FitnessSkill>();
-        services.AddTransient<MAF.Skills.NutritionSkill>();
-        
+        services.AddHttpClient<IPythonCoachClient, PythonCoachClient>((sp, client) =>
+        {
+            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PythonAgentOptions>>().Value;
+            client.BaseAddress = new Uri(options.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(Math.Max(1, options.TimeoutSeconds));
+        });
+
         // Register Semantic Kernel plugins
         services.AddTransient<VisionFoodRecognitionPlugin>();
         services.AddTransient<TextFoodRecognitionPlugin>();
@@ -42,9 +42,32 @@ public static class CopilotServiceCollectionExtensions
         
         // Register orchestrators
         services.AddTransient<FoodNutritionOrchestrator>();
-        services.AddTransient<IFoodAiService, FoodAiService>();
-        services.AddTransient<ICopilotChatService, CopilotChatService>();
-        
+
+        // Register application services
+        services.AddScoped<IFoodAiService, FoodAiService>();
+        services.AddScoped<IFoodRecordService, FoodRecordService>();
+        services.AddScoped<IFitnessService, FitnessService>();
+        services.AddScoped<IWorkoutSessionService, WorkoutSessionService>();
+        services.AddScoped<IConversationService, ConversationService>();
+        services.AddScoped<IConversationMemory, ConversationMemory>();
+        services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<IProgressService, ProgressService>();
+        services.AddScoped<IAuthTokenService, AuthTokenService>();
+
+        // Register tool services
+        services.AddScoped<INutritionTools, NutritionTools>();
+        services.AddScoped<IWorkoutTools, WorkoutTools>();
+        services.AddScoped<IProgressTools, ProgressTools>();
+        services.AddScoped<IVisionTools, VisionTools>();
+
+        // Register agents
+        services.AddScoped<NutritionAgent>();
+        services.AddScoped<WorkoutAgent>();
+        services.AddScoped<VisionNutritionAgent>();
+        services.AddScoped<ProgressCheckInAgent>();
+        services.AddScoped<CoachSupervisorAgent>();
+        services.AddScoped<ICoachChatService, PythonCoachChatService>();
+
         return services;
     }
 

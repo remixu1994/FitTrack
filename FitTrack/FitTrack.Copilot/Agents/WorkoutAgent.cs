@@ -1,0 +1,83 @@
+using System.ComponentModel;
+using FitTrack.Copilot.Data;
+using FitTrack.Copilot.Service;
+using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
+
+namespace FitTrack.Copilot.Agents;
+
+public class WorkoutAgent : IAgentSubAgent
+{
+    private readonly IWorkoutTools _workoutTools;
+    private readonly AIAgent _agent;
+
+    public string Name => "workout";
+
+    public AIAgent Agent => _agent;
+
+    public WorkoutAgent(IChatClient chatClient, IWorkoutTools workoutTools)
+    {
+        _workoutTools = workoutTools;
+        _agent = chatClient.AsAIAgent(
+            "workout-agent",
+            "FitTrack workout expert",
+            """
+            You are FitTrack's workout programming specialist.
+            Focus on training plans, exercise selection, and session review.
+            Use tools for user-specific history and plan suggestions.
+            Keep the response grounded and executable.
+            """,
+            BuildTools());
+    }
+
+    [Description("Answer training and workout questions")]
+    public async Task<AgentExecutionResult> ExecuteAsync(string userId, IReadOnlyList<ConversationMessage> history, string prompt, CancellationToken ct = default)
+    {
+        var response = await _agent.RunAsync(new[]
+        {
+            new ChatMessage(ChatRole.User, BuildPrompt(history, prompt, userId))
+        }, cancellationToken: ct);
+
+        return new AgentExecutionResult("WorkoutAgent", response.Text ?? "No response.", ToolEvents: ["subagent:workout"]);
+    }
+
+    private IList<AITool> BuildTools()
+    {
+        return
+        [
+            AIFunctionFactory.Create(
+                (Func<string, CancellationToken, Task<string>>)SuggestWorkoutPlanAsync,
+                "suggest_workout_plan",
+                "Suggest or refine a workout plan based on the user request."),
+            AIFunctionFactory.Create(
+                (Func<string, CancellationToken, Task<string>>)SummarizeWorkoutHistoryAsync,
+                "summarize_workout_history",
+                "Summarize recent workout history for the current user.")
+        ];
+    }
+
+    private Task<string> SuggestWorkoutPlanAsync(string prompt, CancellationToken ct)
+    {
+        var userId = ExtractUserId(prompt);
+        var normalizedPrompt = RemoveUserIdPrefix(prompt);
+        return _workoutTools.SuggestWorkoutPlanAsync(userId, normalizedPrompt, ct);
+    }
+
+    private Task<string> SummarizeWorkoutHistoryAsync(string prompt, CancellationToken ct)
+        => _workoutTools.SummarizeWorkoutHistoryAsync(ExtractUserId(prompt), ct);
+
+    private static string BuildPrompt(IReadOnlyList<ConversationMessage> history, string prompt, string userId)
+    {
+        var recent = string.Join('\n', history.TakeLast(6).Select(m => $"{m.Role}: {m.ContentText ?? m.ContentJson}"));
+        return $"UserId:{userId}\nRecent conversation:\n{recent}\n\nUser request:\n{prompt}";
+    }
+
+    private static string ExtractUserId(string prompt)
+        => prompt.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .FirstOrDefault(line => line.StartsWith("UserId:", StringComparison.OrdinalIgnoreCase))?
+            .Split(':', 2)[1]
+            .Trim() ?? "anonymous";
+
+    private static string RemoveUserIdPrefix(string prompt)
+        => string.Join('\n', prompt.Split('\n').Where(line => !line.StartsWith("UserId:", StringComparison.OrdinalIgnoreCase)));
+}

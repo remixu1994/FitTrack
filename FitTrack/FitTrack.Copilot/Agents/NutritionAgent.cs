@@ -1,0 +1,85 @@
+using System.ComponentModel;
+using FitTrack.Copilot.Data;
+using FitTrack.Copilot.Service;
+using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
+
+namespace FitTrack.Copilot.Agents;
+
+public class NutritionAgent : IAgentSubAgent
+{
+    private readonly INutritionTools _nutritionTools;
+    private readonly AIAgent _agent;
+
+    public string Name => "nutrition";
+
+    public AIAgent Agent => _agent;
+
+    public NutritionAgent(IChatClient chatClient, INutritionTools nutritionTools)
+    {
+        _nutritionTools = nutritionTools;
+        _agent = chatClient.AsAIAgent(
+            "nutrition-agent",
+            "FitTrack nutrition expert",
+            """
+            You are FitTrack's nutrition specialist.
+            Use tools for factual diet analysis and food search.
+            Keep answers practical, coach-like, and concise.
+            Ask a follow-up question when meal details or goals are missing.
+            """,
+            BuildTools());
+    }
+
+    [Description("Answer a nutrition question with the user's recent context")]
+    public async Task<AgentExecutionResult> ExecuteAsync(string userId, IReadOnlyList<ConversationMessage> history, string prompt, CancellationToken ct = default)
+    {
+        var response = await _agent.RunAsync(
+            new[]
+            {
+                new ChatMessage(ChatRole.User, BuildPrompt(history, prompt, userId))
+            },
+            cancellationToken: ct);
+
+        var snapshot = await _nutritionTools.BuildDailyNutritionSnapshotAsync(userId, ct);
+        return new AgentExecutionResult("NutritionAgent", response.Text ?? "No response.", Snapshot: snapshot, ToolEvents: ["subagent:nutrition"]);
+    }
+
+    private IList<AITool> BuildTools()
+    {
+        return
+        [
+            AIFunctionFactory.Create(
+                (Func<string, CancellationToken, Task<string>>)SearchUsdaAsync,
+                "search_usda_food",
+                "Search USDA for a specific food and return a concise nutrition reference."),
+            AIFunctionFactory.Create(
+                (Func<string, CancellationToken, Task<string>>)AnalyzeMealAsync,
+                "analyze_meal",
+                "Analyze a described meal and estimate macros.")
+        ];
+    }
+
+    private Task<string> SearchUsdaAsync(string query, CancellationToken ct) => _nutritionTools.SearchUsdaAsync(query, ct);
+
+    private Task<string> AnalyzeMealAsync(string prompt, CancellationToken ct)
+    {
+        var userId = ExtractUserId(prompt);
+        var normalizedPrompt = RemoveUserIdPrefix(prompt);
+        return _nutritionTools.AnalyzeMealAsync(userId, normalizedPrompt, ct);
+    }
+
+    private static string BuildPrompt(IReadOnlyList<ConversationMessage> history, string prompt, string userId)
+    {
+        var recent = string.Join('\n', history.TakeLast(6).Select(m => $"{m.Role}: {m.ContentText ?? m.ContentJson}"));
+        return $"UserId:{userId}\nRecent conversation:\n{recent}\n\nUser request:\n{prompt}";
+    }
+
+    private static string ExtractUserId(string prompt)
+        => prompt.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .FirstOrDefault(line => line.StartsWith("UserId:", StringComparison.OrdinalIgnoreCase))?
+            .Split(':', 2)[1]
+            .Trim() ?? "anonymous";
+
+    private static string RemoveUserIdPrefix(string prompt)
+        => string.Join('\n', prompt.Split('\n').Where(line => !line.StartsWith("UserId:", StringComparison.OrdinalIgnoreCase)));
+}

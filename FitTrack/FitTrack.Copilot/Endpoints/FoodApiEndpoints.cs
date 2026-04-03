@@ -1,0 +1,60 @@
+using FitTrack.Copilot.Api;
+using FitTrack.Copilot.Api.Contracts;
+using FitTrack.Copilot.Service;
+
+namespace FitTrack.Copilot.Endpoints;
+
+public static class FoodApiEndpoints
+{
+    public static IEndpointRouteBuilder MapFoodApiEndpoints(this IEndpointRouteBuilder app)
+    {
+        var group = app.MapGroup("/api").WithTags("Food").RequireAuthorization();
+
+        group.MapGet("/foods/search", async (string query, Api.Usda.IUsdaClient client) =>
+        {
+            var item = await client.SearchAsync(query);
+            return Results.Ok(new ApiResponse<object?>(true, item));
+        });
+
+        group.MapGet("/food-records", async (HttpContext httpContext, IFoodRecordService foodRecordService, CancellationToken ct) =>
+        {
+            var records = await foodRecordService.GetFoodRecordsByUserIdAsync(httpContext.User.GetRequiredUserId(), ct);
+            var data = records.Select(r => new FoodRecordDto(r.Id, r.FoodName, r.Calories, r.Protein, r.Carbs, r.Fat, r.ServingSize, r.ServingUnit, r.ConsumptionDate, r.MealType)).ToList();
+            return Results.Ok(new ApiResponse<IReadOnlyList<FoodRecordDto>>(true, data));
+        });
+
+        group.MapPost("/food-records", async (HttpContext httpContext, CreateFoodRecordRequest request, IFoodRecordService foodRecordService, CancellationToken ct) =>
+        {
+            var record = await foodRecordService.CreateFoodRecordAsync(new Data.FoodRecord
+            {
+                UserId = httpContext.User.GetRequiredUserId(),
+                FoodName = request.FoodName,
+                Calories = request.Calories,
+                Protein = request.Protein,
+                Carbs = request.Carbs,
+                Fat = request.Fat,
+                ServingSize = request.ServingSize,
+                ServingUnit = request.ServingUnit,
+                ConsumptionDate = request.ConsumptionDate ?? DateTime.UtcNow,
+                MealType = request.MealType
+            }, ct);
+
+            var dto = new FoodRecordDto(record.Id, record.FoodName, record.Calories, record.Protein, record.Carbs, record.Fat, record.ServingSize, record.ServingUnit, record.ConsumptionDate, record.MealType);
+            return Results.Created($"/api/food-records/{record.Id}", new ApiResponse<FoodRecordDto>(true, dto));
+        });
+
+        group.MapPost("/food/analyze", async (HttpContext httpContext, AnalyzeFoodRequest request, IFoodAiService foodAiService, CancellationToken ct) =>
+        {
+            var result = await foodAiService.AnalyzeAsync(new FoodRequest
+            {
+                Text = request.Text,
+                ImageDataUrl = request.ImageDataUrl,
+                UserId = httpContext.User.GetRequiredUserId()
+            }, ct);
+
+            return Results.Ok(new ApiResponse<object>(true, result));
+        });
+
+        return app;
+    }
+}

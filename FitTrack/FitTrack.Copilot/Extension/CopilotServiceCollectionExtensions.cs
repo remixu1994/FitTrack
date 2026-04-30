@@ -1,5 +1,7 @@
 using Azure;
 using Azure.AI.OpenAI;
+using OpenAI;
+using System.ClientModel;
 using FitTrack.Copilot.Agents;
 using FitTrack.Copilot.Middleware;
 using FitTrack.Copilot.Configuration;
@@ -68,65 +70,97 @@ public static class CopilotServiceCollectionExtensions
         services.AddScoped<CoachSupervisorAgent>();
         services.AddScoped<ICoachChatService, PythonCoachChatService>();
 
+        // AI Chat Client Factory (scoped — resolves user preference per request)
+        services.AddScoped<IAIChatClientFactory, AIChatClientFactory>();
+
         return services;
     }
 
     private static void AddChatClient(this IServiceCollection services, IConfiguration configuration)
     {
-        var config = "AI";
-        var endpoint = configuration[$"{config}:Endpoint"]
-                       ?? throw new InvalidOperationException("AI:Endpoint 配置缺失");
-        var apiKey = configuration[$"{config}:ApiKey"]!;
-        var modelId = configuration[$"{config}:ModelId"] ?? "gpt-4o";
-        var openAIClient = new AzureOpenAIClient(
-            new Uri(endpoint),
-            new AzureKeyCredential(apiKey));
+        // Register two keyed IChatClient singletons: "AzureOpenAI" and "MiniMax"
+        services.AddKeyedSingleton<IChatClient>(AIProviderNames.AzureOpenAI, (sp, key) =>
+            BuildChatClient(sp, configuration, "AI", ChatClientTransport.AzureOpenAI));
+        services.AddKeyedSingleton<IChatClient>(AIProviderNames.MiniMax, (sp, key) =>
+            BuildChatClient(sp, configuration, "MiniMax", ChatClientTransport.OpenAICompatible));
+        services.AddKeyedSingleton<IChatClient>(AIProviderNames.Xiaomi, (sp, key) =>
+            BuildChatClient(sp, configuration, "Xiaomi", ChatClientTransport.OpenAICompatible));
 
-        IChatClient chatClient = openAIClient.GetChatClient(modelId).AsIChatClient();
-        var builder = new ChatClientBuilder(chatClient);
-        if (configuration.GetValue<bool>($"{config}:EnableCaching", true))
+        // Default (non-keyed) IChatClient — used by SemanticKernel plugins that need
+        // IChatClient without user-specific routing. Resolves to AzureOpenAI by default.
+        services.AddSingleton<IChatClient>(sp =>
+            sp.GetRequiredKeyedService<IChatClient>(AIProviderNames.AzureOpenAI));
+    }
+
+    private static IChatClient BuildChatClient(
+        IServiceProvider sp,
+        IConfiguration configuration,
+        string configPrefix,
+        ChatClientTransport transport)
+    {
+        var endpoint = configuration[$"{configPrefix}:Endpoint"]
+                       ?? throw new InvalidOperationException($"{configPrefix}:Endpoint configuration is missing");
+        var apiKey = configuration[$"{configPrefix}:ApiKey"]!;
+        var modelId = configuration[$"{configPrefix}:ModelId"] ?? "gpt-4o";
+
+        IChatClient chatClient;
+        if (transport == ChatClientTransport.OpenAICompatible)
         {
-            var cache = services.BuildServiceProvider().GetRequiredService<IMemoryCache>();
+            // OpenAI-compatible providers use the generic OpenAI client.
+            chatClient = new OpenAIClient(new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri(endpoint) })
+                .GetChatClient(modelId)
+                .AsIChatClient();
+        }
+        else
+        {
+            chatClient = new AzureOpenAIClient(new Uri(endpoint), new AzureKeyCredential(apiKey))
+                .GetChatClient(modelId)
+                .AsIChatClient();
+        }
+
+        var builder = new ChatClientBuilder(chatClient);
+        if (configuration.GetValue<bool>($"{configPrefix}:EnableCaching", true))
+        {
+            var cache = sp.GetRequiredService<IMemoryCache>();
             var distributedCache = new MemoryCacheAdapter(cache);
             builder.UseDistributedCache(distributedCache);
         }
 
-        // 2. Function Calling 中间件
         builder.UseFunctionInvocation();
-        // 构建带中间件的客户端
         var clientWithMiddleware = builder.Build();
-        services.AddSingleton<IChatClient>(sp =>
+
+        // Wrap with outer middleware
+        var enableMonitoring = configuration.GetValue<bool>("Performance:EnableMonitoring", true);
+        var enableLogging = configuration.GetValue<bool>("Performance:EnableLogging", true);
+        var enableFilter = configuration.GetValue<bool>("Performance:EnableSensitiveWordFilter", true);
+
+        IChatClient client = clientWithMiddleware;
+
+        if (enableFilter)
         {
-            // 获取性能配置
-            var enableMonitoring = configuration.GetValue<bool>("Performance:EnableMonitoring", true);
-            var enableLogging = configuration.GetValue<bool>("Performance:EnableLogging", true);
-            var enableFilter = configuration.GetValue<bool>("Performance:EnableSensitiveWordFilter", true);
+            var logger = sp.GetRequiredService<ILogger<SensitiveWordFilterChatClient>>();
+            client = new SensitiveWordFilterChatClient(client, logger);
+        }
 
-            IChatClient client = clientWithMiddleware;
+        if (enableMonitoring)
+        {
+            var logger = sp.GetRequiredService<ILogger<PerformanceMonitorChatClient>>();
+            client = new PerformanceMonitorChatClient(client, logger);
+        }
 
-            // 敏感词过滤中间件（如果启用）
-            if (enableFilter)
-            {
-                var logger = sp.GetRequiredService<ILogger<SensitiveWordFilterChatClient>>();
-                client = new SensitiveWordFilterChatClient(client, logger);
-            }
+        if (enableLogging)
+        {
+            var logger = sp.GetRequiredService<ILogger<Middleware.LoggingChatClient>>();
+            client = new Middleware.LoggingChatClient(client, logger);
+        }
 
-            // 性能监控中间件（如果启用）
-            if (enableMonitoring)
-            {
-                var logger = sp.GetRequiredService<ILogger<PerformanceMonitorChatClient>>();
-                client = new PerformanceMonitorChatClient(client, logger);
-            }
+        return client;
+    }
 
-            // 日志中间件（最外层，如果启用）
-            if (enableLogging)
-            {
-                var logger = sp.GetRequiredService<ILogger<Middleware.LoggingChatClient>>();
-                client = new Middleware.LoggingChatClient(client, logger);
-            }
-
-            return client;
-        });
+    private enum ChatClientTransport
+    {
+        AzureOpenAI,
+        OpenAICompatible
     }
 
     /// <summary>

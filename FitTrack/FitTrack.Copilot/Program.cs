@@ -17,7 +17,8 @@ using NLog.Web;
 var builder = WebApplication.CreateBuilder(args);
 //dotnet user-secrets set "AI:ApiKey" "your-local-api-key"
 builder.Configuration
-    .AddUserSecrets<Program>();
+    .AddUserSecrets<Program>()
+    .AddEnvironmentVariables();
 
 builder.Services.AddOpenApi();
 builder.Services.AddMemoryCache();
@@ -45,6 +46,13 @@ var consoleTarget = new ColoredConsoleTarget("console")
 {
     Layout = "${longdate} | ${level:uppercase=true:padding=-5} | ${logger} | ${message} ${exception:format=tostring}"
 };
+consoleTarget.RowHighlightingRules.Clear();
+consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule("level == LogLevel.Trace", ConsoleOutputColor.DarkGray, ConsoleOutputColor.NoChange));
+consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule("level == LogLevel.Debug", ConsoleOutputColor.Gray, ConsoleOutputColor.NoChange));
+consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule("level == LogLevel.Info", ConsoleOutputColor.White, ConsoleOutputColor.NoChange));
+consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule("level == LogLevel.Warn", ConsoleOutputColor.Yellow, ConsoleOutputColor.NoChange));
+consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule("level == LogLevel.Error", ConsoleOutputColor.Red, ConsoleOutputColor.NoChange));
+consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule("level == LogLevel.Fatal", ConsoleOutputColor.Magenta, ConsoleOutputColor.NoChange));
 
 // 设置日志规则 - 记录所有 Trace 级别及以上的日志
 config.AddRule(NLog.LogLevel.Trace, NLog.LogLevel.Fatal, consoleTarget);
@@ -61,6 +69,27 @@ builder.Services.AddHttpClient("nutrition", client =>
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 
+//Local DataBase
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
+                       throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(connectionString));
+builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = false; // Dev: allow login without email confirmation
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 8;
+})
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddSignInManager()
+    .AddDefaultTokenProviders();
+
+// JWT Bearer auth — must come AFTER AddIdentity so it overrides the default cookie schemes
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = "Bearer";
@@ -83,17 +112,22 @@ builder.Services.AddAuthentication(options =>
     });
 builder.Services.AddAuthorization();
 
-//Local DataBase
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
-                       throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(connectionString));
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-
-builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddSignInManager()
-    .AddDefaultTokenProviders();
+// Prevent Identity cookie from redirecting to /Account/Login on API endpoints — return 401 instead
+builder.Services.PostConfigure<Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationOptions>(
+    Microsoft.AspNetCore.Identity.IdentityConstants.ApplicationScheme,
+    options =>
+    {
+        options.Events.OnRedirectToLogin = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return Task.CompletedTask;
+        };
+        options.Events.OnRedirectToAccessDenied = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return Task.CompletedTask;
+        };
+    });
 
 builder.Services.AddCors(options =>
 {
@@ -119,6 +153,7 @@ builder.Services.Configure<FormOptions>(o =>
 });
 
 var app = builder.Build();
+var frontendBaseUrl = (builder.Configuration["Frontend:BaseUrl"] ?? "http://localhost:3000").TrimEnd('/');
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -142,6 +177,14 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
+MapFrontendRedirect("/", string.Empty);
+MapFrontendRedirect("/login", "login");
+MapFrontendRedirect("/chat", "chat");
+MapFrontendRedirect("/food-records", "food-records");
+MapFrontendRedirect("/workouts", "workouts");
+MapFrontendRedirect("/progress", "progress");
+MapFrontendRedirect("/settings/profile", "settings/profile");
+
 app.MapHealthChecks("/health");
 app.MapAuthEndpoints();
 app.MapProfileEndpoints();
@@ -155,4 +198,18 @@ if (app.Environment.IsDevelopment())
 }
 app.MapFood();
 
+// Seed data (admin user, roles, etc.)
+await DataSeeder.SeedAsync(app.Services);
+
 app.Run();
+
+void MapFrontendRedirect(string route, string targetPath)
+{
+    app.MapGet(route, () =>
+    {
+        var destination = string.IsNullOrWhiteSpace(targetPath)
+            ? frontendBaseUrl
+            : $"{frontendBaseUrl}/{targetPath}";
+        return Results.Redirect(destination);
+    });
+}

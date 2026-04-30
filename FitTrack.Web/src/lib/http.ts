@@ -60,6 +60,12 @@ export async function apiFetchRaw(path: string, options: FetchOptions = {}): Pro
 
 export async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
   const response = await apiFetchRaw(path, options)
+
+  // 204 No Content — no body to parse
+  if (response.status === 204) {
+    return undefined as T
+  }
+
   const payload = (await response.json()) as ApiResponse<T>
   if (!response.ok || !payload.success || payload.data === undefined) {
     throw new Error(payload.error?.message ?? 'Request failed')

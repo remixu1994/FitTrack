@@ -14,14 +14,21 @@ public static class FoodApiEndpoints
         {
             var item = await client.SearchAsync(query);
             return Results.Ok(new ApiResponse<object?>(true, item));
-        });
+        })
+        .Produces<object>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden)
+        .Produces(StatusCodes.Status404NotFound);
 
         group.MapGet("/food-records", async (HttpContext httpContext, IFoodRecordService foodRecordService, CancellationToken ct) =>
         {
             var records = await foodRecordService.GetFoodRecordsByUserIdAsync(httpContext.User.GetRequiredUserId(), ct);
             var data = records.Select(r => new FoodRecordDto(r.Id, r.FoodName, r.Calories, r.Protein, r.Carbs, r.Fat, r.ServingSize, r.ServingUnit, r.ConsumptionDate, r.MealType)).ToList();
             return Results.Ok(new ApiResponse<IReadOnlyList<FoodRecordDto>>(true, data));
-        });
+        })
+        .Produces<ApiResponse<IReadOnlyList<FoodRecordDto>>>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
 
         group.MapPost("/food-records", async (HttpContext httpContext, CreateFoodRecordRequest request, IFoodRecordService foodRecordService, CancellationToken ct) =>
         {
@@ -41,9 +48,13 @@ public static class FoodApiEndpoints
 
             var dto = new FoodRecordDto(record.Id, record.FoodName, record.Calories, record.Protein, record.Carbs, record.Fat, record.ServingSize, record.ServingUnit, record.ConsumptionDate, record.MealType);
             return Results.Created($"/api/food-records/{record.Id}", new ApiResponse<FoodRecordDto>(true, dto));
-        });
+        })
+        .Produces<ApiResponse<FoodRecordDto>>(StatusCodes.Status201Created)
+        .Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
 
-        group.MapPost("/food/analyze", async (HttpContext httpContext, AnalyzeFoodRequest request, IFoodAiService foodAiService, CancellationToken ct) =>
+        group.MapPost("/foods/analyze", async (HttpContext httpContext, AnalyzeFoodRequest request, IFoodAiService foodAiService, CancellationToken ct) =>
         {
             var result = await foodAiService.AnalyzeAsync(new FoodRequest
             {
@@ -53,7 +64,11 @@ public static class FoodApiEndpoints
             }, ct);
 
             return Results.Ok(new ApiResponse<object>(true, result));
-        });
+        })
+        .Produces<ApiResponse<object>>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
 
         return app;
     }

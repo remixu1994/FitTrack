@@ -79,11 +79,7 @@ public static class AuthEndpoints
             IProfileService profileService,
             CancellationToken ct) =>
         {
-            if (!httpContext.User.Identity?.IsAuthenticated ?? true)
-            {
-                return Results.Json(new ApiResponse<object>(false, Error: new ApiError("UNAUTHORIZED", "User is not authenticated.")), statusCode: StatusCodes.Status401Unauthorized);
-            }
-
+            // RequireAuthorization() ensures the user is authenticated via Bearer JWT
             var userId = httpContext.User.GetRequiredUserId();
             var user = await userManager.FindByIdAsync(userId);
             if (user is null)

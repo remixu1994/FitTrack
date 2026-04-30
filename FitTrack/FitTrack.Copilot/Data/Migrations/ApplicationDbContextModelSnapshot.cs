@@ -553,6 +553,10 @@ namespace FitTrack.Copilot.Migrations
                         .HasMaxLength(1024)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("PreferredAIProvider")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Sex")
                         .HasMaxLength(32)
                         .HasColumnType("TEXT");

@@ -6,34 +6,34 @@ namespace FitTrack.Copilot.Agents;
 
 public class CoachSupervisorAgent : ICoachChatService
 {
-    private readonly NutritionAgent _nutritionAgent;
-    private readonly WorkoutAgent _workoutAgent;
-    private readonly VisionNutritionAgent _visionNutritionAgent;
-    private readonly ProgressCheckInAgent _progressCheckInAgent;
+    private readonly IAIChatClientFactory _chatClientFactory;
     private readonly IConversationMemory _conversationMemory;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<CoachSupervisorAgent> _logger;
 
     public CoachSupervisorAgent(
-        NutritionAgent nutritionAgent,
-        WorkoutAgent workoutAgent,
-        VisionNutritionAgent visionNutritionAgent,
-        ProgressCheckInAgent progressCheckInAgent,
-        IConversationMemory conversationMemory)
+        IAIChatClientFactory chatClientFactory,
+        IConversationMemory conversationMemory,
+        IServiceProvider serviceProvider,
+        ILogger<CoachSupervisorAgent> logger)
     {
-        _nutritionAgent = nutritionAgent;
-        _workoutAgent = workoutAgent;
-        _visionNutritionAgent = visionNutritionAgent;
-        _progressCheckInAgent = progressCheckInAgent;
+        _chatClientFactory = chatClientFactory;
         _conversationMemory = conversationMemory;
+        _serviceProvider = serviceProvider;
+        _logger = logger;
     }
 
     public async Task<AgentExecutionResult> SendAsync(string userId, string threadId, string? text, string? imageDataUrl, CancellationToken ct = default)
     {
+        var chatClient = await _chatClientFactory.CreateAsync(userId, ct);
         var history = await _conversationMemory.GetRecentMessagesAsync(threadId, 8, ct);
         var prompt = text?.Trim() ?? string.Empty;
 
         if (!string.IsNullOrWhiteSpace(imageDataUrl))
         {
-            return await _visionNutritionAgent.RunAsync(userId, prompt, imageDataUrl, ct);
+            var agent = new VisionNutritionAgent(
+                _serviceProvider.GetRequiredService<IVisionTools>());
+            return await agent.RunAsync(userId, prompt, imageDataUrl, ct);
         }
 
         var wantsProgress = ContainsAny(prompt, "progress", "check-in", "summary", "weight", "weekly", "month");
@@ -42,44 +42,51 @@ public class CoachSupervisorAgent : ICoachChatService
 
         if (wantsProgress && !wantsWorkout && !wantsNutrition)
         {
-            return await _progressCheckInAgent.RunAsync(userId, ct);
+            var progressAgent = new ProgressCheckInAgent(
+                _serviceProvider.GetRequiredService<IProgressTools>());
+            return await progressAgent.RunAsync(userId, ct);
         }
 
         if (wantsWorkout && wantsNutrition)
         {
             return await RunWorkflowAsync(
+                chatClient,
                 "CoachSupervisorAgent",
                 userId,
                 history,
                 prompt,
                 ct,
-                _workoutAgent,
-                _nutritionAgent);
+                new WorkoutAgent(chatClient, _serviceProvider.GetRequiredService<IWorkoutTools>()),
+                new NutritionAgent(chatClient, _serviceProvider.GetRequiredService<INutritionTools>()));
         }
 
         if (wantsWorkout)
         {
             return await RunWorkflowAsync(
+                chatClient,
                 "CoachSupervisorAgent",
                 userId,
                 history,
                 prompt,
                 ct,
-                _workoutAgent);
+                new WorkoutAgent(chatClient, _serviceProvider.GetRequiredService<IWorkoutTools>()));
         }
 
         if (wantsProgress)
         {
-            return await _progressCheckInAgent.RunAsync(userId, ct);
+            var progressAgent = new ProgressCheckInAgent(
+                _serviceProvider.GetRequiredService<IProgressTools>());
+            return await progressAgent.RunAsync(userId, ct);
         }
 
         return await RunWorkflowAsync(
+            chatClient,
             "CoachSupervisorAgent",
             userId,
             history,
             string.IsNullOrWhiteSpace(prompt) ? "Help me with my diet today." : prompt,
             ct,
-            _nutritionAgent);
+            new NutritionAgent(chatClient, _serviceProvider.GetRequiredService<INutritionTools>()));
     }
 
     private static bool ContainsAny(string prompt, params string[] words)
@@ -89,6 +96,7 @@ public class CoachSupervisorAgent : ICoachChatService
         => (left ?? Array.Empty<string>()).Concat(right ?? Array.Empty<string>()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
     private async Task<AgentExecutionResult> RunWorkflowAsync(
+        IChatClient chatClient,
         string agentName,
         string userId,
         IReadOnlyList<ConversationMessage> history,

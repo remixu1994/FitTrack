@@ -7,6 +7,12 @@ namespace FitTrack.Copilot.Endpoints;
 
 public static class ChatEndpoints
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true
+    };
+
     public static IEndpointRouteBuilder MapChatEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/chat").WithTags("Chat").RequireAuthorization();
@@ -34,8 +40,12 @@ public static class ChatEndpoints
         group.MapDelete("/threads/{threadId}", async (HttpContext httpContext, string threadId, IConversationService conversationService, CancellationToken ct) =>
         {
             await conversationService.DeleteThreadAsync(httpContext.User.GetRequiredUserId(), threadId, ct);
-            return Results.Ok(new ApiResponse<object>(true, new { Deleted = true }));
-        });
+            return Results.NoContent();
+        })
+        .Produces(StatusCodes.Status204NoContent)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden)
+        .Produces(StatusCodes.Status404NotFound);
 
         group.MapGet("/attachments/{attachmentId}", async (HttpContext httpContext, string attachmentId, IConversationService conversationService, CancellationToken ct) =>
         {
@@ -157,7 +167,7 @@ public static class ChatEndpoints
 
     private static async Task WriteEventAsync(HttpContext context, object payload, CancellationToken ct)
     {
-        await context.Response.WriteAsync(JsonSerializer.Serialize(payload) + "\n", ct);
+        await context.Response.WriteAsync(JsonSerializer.Serialize(payload, JsonOptions) + "\n", ct);
         await context.Response.Body.FlushAsync(ct);
     }
 

@@ -7,6 +7,12 @@ import { AppShell } from '@/components/layout/app-shell'
 import { apiFetch, getCurrentUser } from '@/lib/http'
 import type { UserProfile } from '@/types/fittrack'
 
+const AI_PROVIDER_OPTIONS = [
+  { value: 'AzureOpenAI', label: 'Azure OpenAI' },
+  { value: 'MiniMax', label: 'MiniMax' },
+  { value: 'Xiaomi', label: 'Xiaomi MiMo' },
+] as const
+
 export default function ProfileSettingsPage() {
   const query = useQuery({
     queryKey: ['profile'],
@@ -39,6 +45,7 @@ export default function ProfileSettingsPage() {
                   activityLevel: formData.get('activityLevel') || null,
                   goal: formData.get('goal') || null,
                   preferences: formData.get('preferences') || null,
+                  preferredAIProvider: formData.get('preferredAIProvider') || null,
                 }),
               })
               await getCurrentUser()
@@ -56,6 +63,12 @@ export default function ProfileSettingsPage() {
           <Field name="bodyFatPercent" label="Body fat (%)" defaultValue={profile?.bodyFatPercent?.toString() ?? ''} />
           <Field name="activityLevel" label="Activity level" defaultValue={profile?.activityLevel ?? ''} />
           <Field name="goal" label="Goal" defaultValue={profile?.goal ?? ''} />
+          <SelectField
+            name="preferredAIProvider"
+            label="AI provider"
+            defaultValue={profile?.preferredAIProvider ?? ''}
+            options={AI_PROVIDER_OPTIONS}
+          />
           <label className="md:col-span-2">
             <span className="mb-2 block text-xs uppercase tracking-[0.3em] text-slate-400">Preferences</span>
             <textarea name="preferences" defaultValue={profile?.preferences ?? ''} rows={4} className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-300" />
@@ -74,6 +87,36 @@ function Field({ name, label, defaultValue }: { name: string; label: string; def
     <label>
       <span className="mb-2 block text-xs uppercase tracking-[0.3em] text-slate-400">{label}</span>
       <input name={name} defaultValue={defaultValue} className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-300" />
+    </label>
+  )
+}
+
+function SelectField({
+  name,
+  label,
+  defaultValue,
+  options,
+}: {
+  name: string
+  label: string
+  defaultValue: string
+  options: ReadonlyArray<{ value: string; label: string }>
+}) {
+  return (
+    <label>
+      <span className="mb-2 block text-xs uppercase tracking-[0.3em] text-slate-400">{label}</span>
+      <select
+        name={name}
+        defaultValue={defaultValue}
+        className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-300"
+      >
+        <option value="">Use default</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
     </label>
   )
 }

@@ -19,8 +19,12 @@ const navItems = [
 export function AppShell({ title, children }: { title: string; children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [user, setUser] = useState(() => authStorage.getUser())
-  const [ready, setReady] = useState(() => pathname === '/login')
+  const [user, setUser] = useState<AuthenticatedUser | null>(null)
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    setUser(authStorage.getUser())
+  }, [])
 
   useEffect(() => {
     if (pathname === '/login') {

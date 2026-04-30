@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace FitTrack.Copilot.Api.Contracts;
 
 public record ConversationThreadDto(

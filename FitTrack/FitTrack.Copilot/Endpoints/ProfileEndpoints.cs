@@ -18,6 +18,17 @@ public static class ProfileEndpoints
 
         group.MapPut("/", async (HttpContext httpContext, UpsertUserProfileRequest request, IProfileService profileService, CancellationToken ct) =>
         {
+            if (!TryNormalizeProvider(request.PreferredAIProvider, out var preferredAiProvider))
+            {
+                return Results.Json(
+                    new ApiResponse<object>(
+                        false,
+                        Error: new ApiError(
+                            "INVALID_AI_PROVIDER",
+                            $"Unsupported AI provider '{request.PreferredAIProvider}'. Supported values: {string.Join(", ", AIProviderNames.UserSelectable)}.")),
+                    statusCode: StatusCodes.Status400BadRequest);
+            }
+
             var profile = await profileService.UpdateAsync(
                 httpContext.User.GetRequiredUserId(),
                 entity =>
@@ -31,6 +42,7 @@ public static class ProfileEndpoints
                     entity.ActivityLevel = request.ActivityLevel;
                     entity.Goal = request.Goal;
                     entity.Preferences = request.Preferences;
+                    entity.PreferredAIProvider = preferredAiProvider;
                 },
                 httpContext.User.GetEmail(),
                 ct);
@@ -39,5 +51,19 @@ public static class ProfileEndpoints
         });
 
         return app;
+    }
+
+    private static bool TryNormalizeProvider(string? provider, out string? normalizedProvider)
+    {
+        if (string.IsNullOrWhiteSpace(provider))
+        {
+            normalizedProvider = null;
+            return true;
+        }
+
+        normalizedProvider = AIProviderNames.UserSelectable.FirstOrDefault(
+            item => string.Equals(item, provider.Trim(), StringComparison.OrdinalIgnoreCase));
+
+        return normalizedProvider is not null;
     }
 }

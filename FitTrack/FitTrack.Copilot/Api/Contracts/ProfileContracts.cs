@@ -12,6 +12,7 @@ public record UserProfileDto(
     string? ActivityLevel,
     string? Goal,
     string? Preferences,
+    string? PreferredAIProvider,
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
@@ -24,4 +25,5 @@ public record UpsertUserProfileRequest(
     double? BodyFatPercent,
     string? ActivityLevel,
     string? Goal,
-    string? Preferences);
+    string? Preferences,
+    string? PreferredAIProvider);

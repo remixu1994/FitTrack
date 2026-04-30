@@ -86,7 +86,7 @@ public static class InternalAgentToolEndpoints
 
     private sealed record RecentWorkoutExerciseDto(
         string ExerciseName,
-        int Sets,
-        int Reps,
-        int Duration);
+        int? Sets,
+        int? Reps,
+        int? Duration);
 }

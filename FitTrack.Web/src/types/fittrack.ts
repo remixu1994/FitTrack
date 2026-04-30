@@ -91,6 +91,7 @@ export type UserProfile = {
   activityLevel?: string | null
   goal?: string | null
   preferences?: string | null
+  preferredAIProvider?: string | null
   createdAt: string
   updatedAt: string
 }

@@ -22,6 +22,7 @@ internal static class Mappers
             profile.ActivityLevel,
             profile.Goal,
             profile.Preferences,
+            profile.PreferredAIProvider,
             profile.CreatedAt,
             profile.UpdatedAt);
 

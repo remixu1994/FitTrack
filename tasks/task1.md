@@ -18,7 +18,7 @@
 
 - `FitTrack/`：legacy，不做新功能，只保留可运行与参考价值。
 - `FitTrack/FitTrack.Copilot/`：重构为主后端，继续用现有 SQLite 与 Identity 基础。
-- `FitTrack.Web/`：新建 Next.js 前端，迁移 `CarbCycle` 的 UI 结构、聊天体验和会话模型。
+- `FitTrack/FitTrack.React/`：新建 Next.js 前端，迁移 `CarbCycle` 的 UI 结构、聊天体验和会话模型。
 - 根文档 `AGENTS.md` / `CONTEXT.md` / `ARCHITECTURE.md` / `DECISIONS.md` 同步更新为新主线。
 
 后端不再承担 Razor UI 责任。`FitTrack.Copilot` 的 `Components/*`、MudBlazor 和 Blazor Server 渲染链路进入淘汰路径；短期允许并存，最终主入口应只保留 API/Auth/Agent Host。
@@ -66,7 +66,7 @@
 
 ### 4. 前端目标形态：迁移 CarbCycle 的 UI 和会话模型
 
-`FitTrack.Web` 采用：
+`FitTrack.React` 采用：
 - Next.js App Router
 - React 19
 - TypeScript

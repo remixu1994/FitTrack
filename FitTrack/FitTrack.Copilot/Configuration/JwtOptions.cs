@@ -1,4 +1,4 @@
-namespace FitTrack.Copilot.Configuration;
+﻿namespace FitTrack.Copilot.Configuration;
 
 public class JwtOptions
 {
@@ -6,7 +6,7 @@ public class JwtOptions
 
     public string Issuer { get; set; } = "FitTrack.Copilot";
 
-    public string Audience { get; set; } = "FitTrack.Web";
+    public string Audience { get; set; } = "FitTrack.React";
 
     public string SigningKey { get; set; } = "ChangeThisDevelopmentSigningKeyForFitTrack123!";
 
@@ -16,3 +16,4 @@ public class JwtOptions
 
     public string RefreshCookieName { get; set; } = "fittrack_rt";
 }
+

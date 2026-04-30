@@ -7,8 +7,8 @@
   - `FitTrack/`: 旧主应用，`net9.0`
   - `FitTrack.Copilot/`: AI 扩展应用，`net10.0`
 - 当前还有一个独立前端应用:
-  - `FitTrack.Web/`: `Next.js + React 19 + TypeScript + Tailwind`
-- 现阶段主交付链路是 `FitTrack.Web -> FitTrack.Copilot API`，不是 Blazor 主链路。
+  - `FitTrack/FitTrack.React/`: `Next.js + React 19 + TypeScript + Tailwind`
+- 现阶段主交付链路是 `FitTrack.React -> FitTrack.Copilot API`，不是 Blazor 主链路。
 - `FitTrack` 仍保留为基础版/legacy 参考实现。
 - `FitTrack.Copilot` 仍保留部分 Blazor/MudBlazor 代码，但主线已经转为 API + Agent Host。
 - 当前仓库存在未提交改动，至少包括:
@@ -25,14 +25,14 @@
   - Semantic Kernel / Agents / RAG 相关能力
 - 当前新的实施主线是:
   - `FitTrack.Copilot` 作为 `.NET 10` API + Agent Host
-  - `FitTrack.Web` 作为主前端工作台
-- `FitTrack.Web` 不是 `.sln` 中的项目，但它是仓库级的一等公民。
+  - `FitTrack.React` 作为主前端工作台
+- `FitTrack.React` 不是 `.sln` 中的项目，但它是仓库级的一等公民。
 - 两条 .NET 产品线与独立前端并行存在，不能默认合并或互相继承能力。
 
 ## 3. 协作约束
 
 - 修改代码前先确认要动的是 `FitTrack` 还是 `FitTrack.Copilot`，避免把能力错加到另一条产品线上。
-- 前端相关变更优先落在 `FitTrack.Web`，不要再把新 UI 加回 `FitTrack.Copilot/Components/*`。
+- 前端相关变更优先落在 `FitTrack.React`，不要再把新 UI 加回 `FitTrack.Copilot/Components/*`。
 - 不要默认 `FitTrack.Copilot` 的设计已经在主项目落地；当前主项目仍明显接近模板起点。
 - 不要删除或覆盖现有 SQLite 文件，尤其是:
   - `FitTrack/Data/app.db`
@@ -66,19 +66,29 @@
   - `USDA`
 - 开发机需要 user-secrets 或本地配置提供 API Key，仓库中的 `appsettings.json` 仅是占位。
 
-### 前端应用 `FitTrack.Web`
+### 前端应用 `FitTrack.React`
 
-- 启动命令: `cd FitTrack.Web; npm install; npm run dev`
+- 启动命令: `cd FitTrack/FitTrack.React; npm install; npm run dev`
 - 本地地址:
   - `http://localhost:3000`
 - 通过环境变量 `NEXT_PUBLIC_API_BASE_URL` 指向 `FitTrack.Copilot` API，默认值是 `https://localhost:7291`
 - 前端主链路是线程式聊天工作台、饮食记录、训练记录和进度看板
 
+### 一键联调脚本
+
+- 启动命令: `.\start-fittrack-dev.ps1`
+- 运行位置: 仓库根目录
+- 脚本行为:
+  - 检查 `dotnet` 和 `npm` 是否可用
+  - 若 `FitTrack/FitTrack.React/node_modules` 缺失，则先执行 `npm install`
+  - 分别在两个独立 PowerShell 窗口中启动 `FitTrack.Copilot` 和 `FitTrack.React`
+  - 后端使用 `dotnet watch run`，前端使用 `npm run dev`
+
 ## 5. 高风险区域
 
 - `Program.cs`: 服务注册、认证、中间件、数据库初始化都在这里。
-- `FitTrack.Web/src/components/chat/chat-view.tsx`: 新前端主链路聊天工作台。
-- `FitTrack.Web/src/lib/http.ts`: 前端认证、refresh、401 重试都经过这里。
+- `FitTrack/FitTrack.React/src/components/chat/chat-view.tsx`: 新前端主链路聊天工作台。
+- `FitTrack/FitTrack.React/src/lib/http.ts`: 前端认证、refresh、401 重试都经过这里。
 - `Data/`: EF Core 实体和迁移定义，改动会直接影响 SQLite schema。
 - `DbInitializer`: 主项目依赖 `foods.json` 做初始导入。
 - `FitTrack.Copilot/Service` 和 `SemanticKernel/`: AI 编排与业务能力耦合较高，改动前先确认调用链。
@@ -98,7 +108,7 @@
 ## 7. Python Agent Sidecar（2026-04 Phase 1）
 
 - 新增 `FitTrack.AgentHost.Python/`，用于承载 Python 版 Agent Framework sidecar。
-- 当前主链路仍然是 `FitTrack.Web -> FitTrack.Copilot -> Python sidecar`，不是前端直连 Python。
+- 当前主链路仍然是 `FitTrack.React -> FitTrack.Copilot -> Python sidecar`，不是前端直连 Python。
 - `FitTrack.Copilot` 仍然负责:
   - JWT / refresh cookie
   - conversation thread / message / attachment / snapshot 持久化
@@ -109,3 +119,4 @@
   - trace / log 落盘
 - Python sidecar Phase 1 不直接读 `FitTrack.Copilot/Data/app.db`。
 - Python sidecar 通过 `FitTrack.Copilot` 的 `/internal/agent-tools/*` 本地开发内部接口获取业务数据。
+

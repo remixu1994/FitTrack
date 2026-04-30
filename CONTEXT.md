@@ -16,7 +16,7 @@
    旧的 Blazor + Identity 基础版，保留为 legacy/reference。
 2. `FitTrack.Copilot`
    `.NET 10` 的 AI 后端主线，负责 API、Identity、Agent 编排和数据库写入。
-3. `FitTrack.Web`
+3. `FitTrack.React`
    独立的 Next.js 前端工作台，承接主用户体验和线程式聊天。
 
 ## 已确认的现状
@@ -53,7 +53,7 @@
   - `/api/*` 聊天、档案、饮食、训练、进度端点
 - `FitTrack.Copilot/Components/*` 仍保留部分旧 UI，但主交付路径已经切到 API + Agent Host。
 
-### `FitTrack.Web`
+### `FitTrack.React`
 
 - 技术栈: `Next.js 16 + React 19 + TypeScript + Tailwind + TanStack Query`
 - 当前已落成页面:
@@ -72,7 +72,7 @@
 
 - `FitTrack.Copilot/Components/*` 仍在项目内编译
 - MudBlazor/Blazor UI 还没有从工程层面完全移除
-- 当前主交付物已经变成 `FitTrack.Web + FitTrack.Copilot API`
+- 当前主交付物已经变成 `FitTrack.React + FitTrack.Copilot API`
 
 ### 2. 主项目业务完成度偏低
 

@@ -6,7 +6,7 @@ Phase 1 增加了一个独立的 Python agent host:
 
 ```mermaid
 flowchart TD
-    A["FitTrack.Web"] --> B["FitTrack.Copilot /api/chat/messages"]
+    A["FitTrack.React"] --> B["FitTrack.Copilot /api/chat/messages"]
     B --> C["PythonCoachChatService"]
     C --> D["FitTrack.AgentHost.Python"]
     D --> E["Azure OpenAI via Agent Framework"]
@@ -28,9 +28,9 @@ flowchart TD
 
 - `FitTrack`: 基础健身/饮食记录 Web 应用，仍是 legacy 参考实现
 - `FitTrack.Copilot`: 带 AI 能力的主后端 API / Agent Host
-- `FitTrack.Web`: Next.js 前端工作台
+- `FitTrack.React`: Next.js 前端工作台
 
-当前真正的主交付链路是 `FitTrack.Web -> FitTrack.Copilot API`。`FitTrack` 仍然保留，但不再承接新的主线能力。
+当前真正的主交付链路是 `FitTrack.React -> FitTrack.Copilot API`。`FitTrack` 仍然保留，但不再承接新的主线能力。
 
 ## 2. Solution 结构
 
@@ -53,7 +53,7 @@ FitTrack.sln
     ├── Properties/
     └── Program.cs
 
-FitTrack.Web/                  # 独立 Next.js 前端，不在 .sln 中
+FitTrack/FitTrack.React/        # 独立 Next.js 前端，不在 .sln 中
 ├── src/app/                   # App Router 页面
 ├── src/components/            # React 组件与工作台布局
 ├── src/lib/                   # API 配置、认证、HTTP 客户端
@@ -152,7 +152,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A["FitTrack.Web / Browser"] --> B["ASP.NET Core API Endpoints"]
+    A["FitTrack.React / Browser"] --> B["ASP.NET Core API Endpoints"]
     B --> C["Application Services"]
     C --> D["CoachSupervisorAgent"]
     D --> E["Nutrition / Workout / Vision / Progress Agents"]
@@ -167,8 +167,8 @@ flowchart TD
 #### API 与前端分层
 
 - `FitTrack.Copilot/Endpoints/*`: 对外 API
-- `FitTrack.Web/src/app/*`: 新前端页面
-- `FitTrack.Web/src/components/chat/chat-view.tsx`: 线程式聊天工作台
+- `FitTrack/FitTrack.React/src/app/*`: 新前端页面
+- `FitTrack/FitTrack.React/src/components/chat/chat-view.tsx`: 线程式聊天工作台
 
 #### 服务层
 
@@ -228,7 +228,7 @@ flowchart TD
 8. 配置表单上传上限为 20MB
 9. 映射业务端点和健康检查
 
-## 5. `FitTrack.Web` 架构
+## 5. `FitTrack.React` 架构
 
 ### 5.1 运行时结构
 
@@ -255,7 +255,7 @@ flowchart TD
 
 ### 5.3 前端数据流
 
-1. 用户访问 `FitTrack.Web`
+1. 用户访问 `FitTrack.React`
 2. 应用壳层检查本地 token 和 `/api/auth/me`
 3. 聊天、饮食、训练和进度页面通过 `src/lib/http.ts` 调用后端
 4. 后端返回 DTO、流式事件和结构化卡片数据
@@ -277,7 +277,7 @@ flowchart TD
 - 可扩展性更强，但复杂度和运行前提也更高
 - 更需要配置治理、测试和可观测性
 
-### `FitTrack.Web`
+### `FitTrack.React`
 
 - 专注于会话体验、线程列表、结构化卡片和表单交互
 - 不直连数据库，所有业务写入都走 `FitTrack.Copilot` API
@@ -305,7 +305,7 @@ flowchart TD
 
 ### Next.js 前端数据流
 
-1. 用户访问 `FitTrack.Web`
+1. 用户访问 `FitTrack.React`
 2. 应用壳层检查 token 并调用 `/api/auth/me`
 3. 页面通过 typed HTTP client 调用 Copilot API
 4. 聊天页解析 NDJSON 流式事件并增量渲染
@@ -314,7 +314,7 @@ flowchart TD
 ## 8. 当前架构缺口
 
 - 仓库层面没有统一的共享 domain 层
-- `FitTrack.Web` 仍是独立目录，不在 `.sln` 中
+- `FitTrack.React` 仍是 `FitTrack/` 下的独立目录，不在 `.sln` 中
 - 两个 .NET 项目的数据模型和能力边界仍未在代码结构中显式统一
 - 主应用页面和业务模型不匹配
 - 缺少测试项目，架构回归很难被自动发现

@@ -9,7 +9,7 @@
   - `FitTrack.AgentHost.Python/`
   - `FitTrack.Copilot/Service/PythonCoachChatService.cs`
 - 含义:
-  - 前端主入口保持 `FitTrack.Web -> FitTrack.Copilot`
+  - 前端主入口保持 `FitTrack.React -> FitTrack.Copilot`
   - Python 作为 sidecar 承接 agent orchestration，不直接成为前端 API 入口
 
 ### D-017 聊天主数据仍由 `.NET` 持久化
@@ -157,7 +157,7 @@
 
 - 状态: 已落地
 - 证据:
-  - `FitTrack.Web/`
+  - `FitTrack/FitTrack.React/`
   - `src/app/chat/page.tsx`
   - `src/components/chat/chat-view.tsx`
 - 含义:
@@ -192,7 +192,7 @@
 
 - 状态: 已落地
 - 证据:
-  - `FitTrack.Web/src/lib/http.ts`
+  - `FitTrack/FitTrack.React/src/lib/http.ts`
   - `FitTrack.Copilot/Endpoints/AuthEndpoints.cs`
 - 含义:
   - 前端持有短期 access token
@@ -201,12 +201,12 @@
 - 影响:
   - 认证链路必须同时考虑 CORS、cookie SameSite 和 HTTPS
 
-## D-015 `FitTrack.Web` 作为独立前端目录保留，不并入 `.sln`
+## D-015 `FitTrack.React` 作为独立前端目录保留，不并入 `.sln`
 
 - 状态: 已落地
 - 证据:
   - 当前 `FitTrack.sln` 只包含两个 .NET 项目
-  - `FitTrack.Web` 作为独立 Next.js 工作区存在
+  - `FitTrack.React` 作为独立 Next.js 工作区存在
 - 含义:
   - solution 继续只管理 .NET 运行时
   - 前端通过独立 Node/Next.js 工作流开发与启动

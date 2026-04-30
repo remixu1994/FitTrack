@@ -1,4 +1,4 @@
-# Runtime Configuration & Execution
+﻿# Runtime Configuration & Execution
 
 <cite>
 **Referenced Files in This Document**   
@@ -39,7 +39,7 @@ The FitTrack application consists of two primary services: the main web applicat
 ```mermaid
 graph TB
 subgraph "FitTrack Services"
-A[FitTrack Web Application]
+A[FitTrack React Application]
 B[FitTrack.Copilot Service]
 end
 A --> C[Database]
@@ -364,7 +364,7 @@ services:
 
 ### Port Mapping
 The containers expose the following ports:
-- 8080: Main FitTrack web application
+- 8080: Main FitTrack React Application
 - 8081: FitTrack.Copilot AI service
 
 These can be mapped to different host ports as needed.

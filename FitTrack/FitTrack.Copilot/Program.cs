@@ -193,10 +193,6 @@ app.MapChatEndpoints();
 app.MapFoodApiEndpoints();
 app.MapWorkoutApiEndpoints();
 app.MapProgressEndpoints();
-if (app.Environment.IsDevelopment())
-{
-    app.MapInternalAgentToolEndpoints();
-}
 app.MapFood();
 
 // Seed data (admin user, roles, etc.)

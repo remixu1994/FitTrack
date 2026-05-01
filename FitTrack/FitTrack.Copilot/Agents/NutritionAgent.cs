@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Text;
 using FitTrack.Copilot.Data;
 using FitTrack.Copilot.Service;
 using Microsoft.Agents.AI;
@@ -6,7 +8,7 @@ using Microsoft.Extensions.AI;
 
 namespace FitTrack.Copilot.Agents;
 
-public class NutritionAgent : IAgentSubAgent
+public class NutritionAgent : IStreamingSubAgent
 {
     private readonly INutritionTools _nutritionTools;
     private readonly AIAgent _agent;
@@ -33,15 +35,49 @@ public class NutritionAgent : IAgentSubAgent
     [Description("Answer a nutrition question with the user's recent context")]
     public async Task<AgentExecutionResult> ExecuteAsync(string userId, IReadOnlyList<ConversationMessage> history, string prompt, CancellationToken ct = default)
     {
-        var response = await _agent.RunAsync(
-            new[]
+        AgentExecutionResult? result = null;
+        await foreach (var update in ExecuteStreamingAsync(userId, history, prompt, ct).WithCancellation(ct))
+        {
+            if (update.Type == CoachStreamEventType.Completed)
             {
-                new ChatMessage(ChatRole.User, BuildPrompt(history, prompt, userId))
-            },
-            cancellationToken: ct);
+                result = update.Result;
+            }
+        }
+
+        return result ?? new AgentExecutionResult("NutritionAgent", "No response.", ToolEvents: ["subagent:nutrition"]);
+    }
+
+    public async IAsyncEnumerable<CoachStreamEvent> ExecuteStreamingAsync(
+        string userId,
+        IReadOnlyList<ConversationMessage> history,
+        string prompt,
+        [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        yield return CoachStreamEvent.ToolEvent("subagent:nutrition");
+
+        var responseText = new StringBuilder();
+        await foreach (var update in _agent.RunStreamingAsync(
+                           new[]
+                           {
+                               new ChatMessage(ChatRole.User, BuildPrompt(history, prompt, userId))
+                           },
+                           cancellationToken: ct).WithCancellation(ct))
+        {
+            if (string.IsNullOrWhiteSpace(update.Text))
+            {
+                continue;
+            }
+
+            responseText.Append(update.Text);
+            yield return CoachStreamEvent.Token(update.Text);
+        }
 
         var snapshot = await _nutritionTools.BuildDailyNutritionSnapshotAsync(userId, ct);
-        return new AgentExecutionResult("NutritionAgent", response.Text ?? "No response.", Snapshot: snapshot, ToolEvents: ["subagent:nutrition"]);
+        yield return CoachStreamEvent.Completed(new AgentExecutionResult(
+            "NutritionAgent",
+            responseText.Length == 0 ? "No response." : responseText.ToString(),
+            Snapshot: snapshot,
+            ToolEvents: ["subagent:nutrition"]));
     }
 
     private IList<AITool> BuildTools()

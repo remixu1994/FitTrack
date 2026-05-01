@@ -121,24 +121,31 @@ public static class ChatEndpoints
 
         try
         {
-            var agentResponse = await coachChatService.SendAsync(
-                userId,
-                request.ThreadId,
-                request.ContentText,
-                request.MealPhoto?.DataUrl,
-                ct);
-
-            if (agentResponse.ToolEvents is not null)
+            AgentExecutionResult? agentResponse = null;
+            await foreach (var update in coachChatService.SendStreamingAsync(
+                               userId,
+                               request.ThreadId,
+                               request.ContentText,
+                               request.MealPhoto?.DataUrl,
+                               ct).WithCancellation(ct))
             {
-                foreach (var toolEvent in agentResponse.ToolEvents)
+                switch (update.Type)
                 {
-                    await WriteEventAsync(httpContext, new { type = "tool_event", value = toolEvent }, ct);
+                    case CoachStreamEventType.ToolEvent when !string.IsNullOrWhiteSpace(update.Value):
+                        await WriteEventAsync(httpContext, new { type = "tool_event", value = update.Value }, ct);
+                        break;
+                    case CoachStreamEventType.Token when !string.IsNullOrWhiteSpace(update.Value):
+                        await WriteEventAsync(httpContext, new { type = "token", value = update.Value }, ct);
+                        break;
+                    case CoachStreamEventType.Completed when update.Result is not null:
+                        agentResponse = update.Result;
+                        break;
                 }
             }
 
-            foreach (var chunk in Chunk(agentResponse.Message))
+            if (agentResponse is null)
             {
-                await WriteEventAsync(httpContext, new { type = "token", value = chunk }, ct);
+                throw new InvalidOperationException("Coach response completed without a final result.");
             }
 
             var assistantMessage = await conversationService.CreateMessageAsync(
@@ -169,14 +176,5 @@ public static class ChatEndpoints
     {
         await context.Response.WriteAsync(JsonSerializer.Serialize(payload, JsonOptions) + "\n", ct);
         await context.Response.Body.FlushAsync(ct);
-    }
-
-    private static IEnumerable<string> Chunk(string message)
-    {
-        const int size = 24;
-        for (var i = 0; i < message.Length; i += size)
-        {
-            yield return message.Substring(i, Math.Min(size, message.Length - i));
-        }
     }
 }

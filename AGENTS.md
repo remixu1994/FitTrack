@@ -108,18 +108,15 @@
 
 后续如果仓库继续演进，优先更新这 4 个文件，而不是把信息散落到聊天记录里。
 
-## 7. Python Agent Sidecar（2026-04 Phase 1）
+## 7. Chat Runtime（2026-05）
 
-- 新增 `FitTrack.AgentHost.Python/`，用于承载 Python 版 Agent Framework sidecar。
-- 当前主链路仍然是 `FitTrack.React -> FitTrack.Copilot -> Python sidecar`，不是前端直连 Python。
-- `FitTrack.Copilot` 仍然负责:
+- `FitTrack.Copilot` 当前已经移除 Python chat provider、内部 tool API 映射和 sidecar 依赖。
+- 当前聊天主链路是 `FitTrack.React -> FitTrack.Copilot -> in-process CoachSupervisorAgent`。
+- `FitTrack.Copilot` 负责:
   - JWT / refresh cookie
   - conversation thread / message / attachment / snapshot 持久化
   - 对前端输出 NDJSON 聊天流
-- Python sidecar 当前只负责:
-  - 多智能体聊天编排
-  - 模型调用
-  - trace / log 落盘
-- Python sidecar Phase 1 不直接读 `FitTrack.Copilot/Data/app.db`。
-- Python sidecar 通过 `FitTrack.Copilot` 的 `/internal/agent-tools/*` 本地开发内部接口获取业务数据。
+  - 在进程内编排 `Nutrition / Workout / Vision / Progress` 子 Agent
+- 文本聊天现在优先走 `.NET` 进程内流式输出，不再经过 Python fallback。
+- 若仓库保留 `FitTrack.AgentHost.Python/` 目录，应视为独立实验资产，而不是 `FitTrack.Copilot` 的当前运行前提。
 

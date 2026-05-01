@@ -23,3 +23,22 @@ public record AgentExecutionResult(
     Dictionary<string, object?>? StructuredPayload = null,
     AgentNutritionSnapshot? Snapshot = null,
     IReadOnlyList<string>? ToolEvents = null);
+
+public enum CoachStreamEventType
+{
+    Token,
+    ToolEvent,
+    Completed
+}
+
+public record CoachStreamEvent(
+    CoachStreamEventType Type,
+    string? Value = null,
+    AgentExecutionResult? Result = null)
+{
+    public static CoachStreamEvent Token(string value) => new(CoachStreamEventType.Token, value);
+
+    public static CoachStreamEvent ToolEvent(string value) => new(CoachStreamEventType.ToolEvent, value);
+
+    public static CoachStreamEvent Completed(AgentExecutionResult result) => new(CoachStreamEventType.Completed, Result: result);
+}

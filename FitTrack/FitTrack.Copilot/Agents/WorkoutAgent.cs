@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Text;
 using FitTrack.Copilot.Data;
 using FitTrack.Copilot.Service;
 using Microsoft.Agents.AI;
@@ -6,7 +8,7 @@ using Microsoft.Extensions.AI;
 
 namespace FitTrack.Copilot.Agents;
 
-public class WorkoutAgent : IAgentSubAgent
+public class WorkoutAgent : IStreamingSubAgent
 {
     private readonly IWorkoutTools _workoutTools;
     private readonly AIAgent _agent;
@@ -33,12 +35,47 @@ public class WorkoutAgent : IAgentSubAgent
     [Description("Answer training and workout questions")]
     public async Task<AgentExecutionResult> ExecuteAsync(string userId, IReadOnlyList<ConversationMessage> history, string prompt, CancellationToken ct = default)
     {
-        var response = await _agent.RunAsync(new[]
+        AgentExecutionResult? result = null;
+        await foreach (var update in ExecuteStreamingAsync(userId, history, prompt, ct).WithCancellation(ct))
         {
-            new ChatMessage(ChatRole.User, BuildPrompt(history, prompt, userId))
-        }, cancellationToken: ct);
+            if (update.Type == CoachStreamEventType.Completed)
+            {
+                result = update.Result;
+            }
+        }
 
-        return new AgentExecutionResult("WorkoutAgent", response.Text ?? "No response.", ToolEvents: ["subagent:workout"]);
+        return result ?? new AgentExecutionResult("WorkoutAgent", "No response.", ToolEvents: ["subagent:workout"]);
+    }
+
+    public async IAsyncEnumerable<CoachStreamEvent> ExecuteStreamingAsync(
+        string userId,
+        IReadOnlyList<ConversationMessage> history,
+        string prompt,
+        [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        yield return CoachStreamEvent.ToolEvent("subagent:workout");
+
+        var responseText = new StringBuilder();
+        await foreach (var update in _agent.RunStreamingAsync(
+                           new[]
+                           {
+                               new ChatMessage(ChatRole.User, BuildPrompt(history, prompt, userId))
+                           },
+                           cancellationToken: ct).WithCancellation(ct))
+        {
+            if (string.IsNullOrWhiteSpace(update.Text))
+            {
+                continue;
+            }
+
+            responseText.Append(update.Text);
+            yield return CoachStreamEvent.Token(update.Text);
+        }
+
+        yield return CoachStreamEvent.Completed(new AgentExecutionResult(
+            "WorkoutAgent",
+            responseText.Length == 0 ? "No response." : responseText.ToString(),
+            ToolEvents: ["subagent:workout"]));
     }
 
     private IList<AITool> BuildTools()

@@ -12,3 +12,8 @@ public interface IAgentSubAgent
 
     Task<AgentExecutionResult> ExecuteAsync(string userId, IReadOnlyList<ConversationMessage> history, string prompt, CancellationToken ct = default);
 }
+
+public interface IStreamingSubAgent : IAgentSubAgent
+{
+    IAsyncEnumerable<CoachStreamEvent> ExecuteStreamingAsync(string userId, IReadOnlyList<ConversationMessage> history, string prompt, CancellationToken ct = default);
+}

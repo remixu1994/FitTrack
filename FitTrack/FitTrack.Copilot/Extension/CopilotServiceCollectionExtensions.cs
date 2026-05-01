@@ -22,15 +22,8 @@ public static class CopilotServiceCollectionExtensions
         IConfiguration configuration)
     {
         services.Configure<PromptOptions>(configuration.GetSection("Prompts"));
-        services.Configure<PythonAgentOptions>(configuration.GetSection(PythonAgentOptions.SectionName));
         services.AddSingleton<PromptLoader>();
         services.AddChatClient(configuration);
-        services.AddHttpClient<IPythonCoachClient, PythonCoachClient>((sp, client) =>
-        {
-            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PythonAgentOptions>>().Value;
-            client.BaseAddress = new Uri(options.BaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(Math.Max(1, options.TimeoutSeconds));
-        });
 
         // Register Semantic Kernel plugins
         services.AddTransient<VisionFoodRecognitionPlugin>();
@@ -68,7 +61,7 @@ public static class CopilotServiceCollectionExtensions
         services.AddScoped<VisionNutritionAgent>();
         services.AddScoped<ProgressCheckInAgent>();
         services.AddScoped<CoachSupervisorAgent>();
-        services.AddScoped<ICoachChatService, PythonCoachChatService>();
+        services.AddScoped<ICoachChatService, CoachSupervisorAgent>();
 
         // AI Chat Client Factory (scoped — resolves user preference per request)
         services.AddScoped<IAIChatClientFactory, AIChatClientFactory>();

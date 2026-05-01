@@ -13,6 +13,14 @@
 - 后端使用 `dotnet watch run`
 - 前端使用 `npm run dev`
 - 如果 `FitTrack/FitTrack.React/node_modules` 不存在，会先自动执行一次 `npm install`
+- 默认把 `FitTrack.Copilot` 启动在 `http://localhost:5097`
+- 通过环境变量 `NEXT_PUBLIC_COPILOT_PORT` 把这个端口传给 React
+
+也可以指定端口：
+
+```powershell
+.\start-fittrack-dev.ps1 -CopilotPort 5100
+```
 
 
 FitTrack 目前由 `FitTrack.Copilot` 后端和 `FitTrack.React` 前端站点组成。
@@ -44,7 +52,7 @@ npm run dev
 
 ## 前端配置
 
-`FitTrack.React` 默认通过 `NEXT_PUBLIC_API_BASE_URL` 连接 Copilot API，未设置时使用 `https://localhost:7291`。
+`FitTrack.React` 优先通过 `NEXT_PUBLIC_COPILOT_PORT` 拼接本地 Copilot 地址，默认使用 `http://localhost:5097`。如果需要连远端后端，再设置 `NEXT_PUBLIC_API_BASE_URL`。
 
 ## 当前主线
 

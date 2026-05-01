@@ -153,6 +153,7 @@ builder.Services.Configure<FormOptions>(o =>
 });
 
 var app = builder.Build();
+await ApplyDatabaseMigrationsAsync(app.Services);
 var frontendBaseUrl = (builder.Configuration["Frontend:BaseUrl"] ?? "http://localhost:3000").TrimEnd('/');
 
 // Configure the HTTP request pipeline.
@@ -202,6 +203,13 @@ app.MapFood();
 await DataSeeder.SeedAsync(app.Services);
 
 app.Run();
+
+async Task ApplyDatabaseMigrationsAsync(IServiceProvider services)
+{
+    await using var scope = services.CreateAsyncScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 void MapFrontendRedirect(string route, string targetPath)
 {

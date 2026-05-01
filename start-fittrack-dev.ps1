@@ -1,3 +1,8 @@
+param(
+    [ValidateRange(1, 65535)]
+    [int]$CopilotPort = 5097
+)
+
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
@@ -45,6 +50,7 @@ $copilotProject = Join-Path $copilotDir 'FitTrack.Copilot.csproj'
 $frontendDir = Join-Path $repoRoot 'FitTrack\FitTrack.React'
 $frontendPackageJson = Join-Path $frontendDir 'package.json'
 $frontendNodeModules = Join-Path $frontendDir 'node_modules'
+$copilotBaseUrl = "http://localhost:$CopilotPort"
 
 Test-RequiredCommand -Name 'dotnet'
 Test-RequiredCommand -Name 'npm'
@@ -74,15 +80,20 @@ else {
 $repoRootLiteral = ConvertTo-SingleQuotedLiteral -Value $repoRoot
 $copilotProjectLiteral = ConvertTo-SingleQuotedLiteral -Value $copilotProject
 $frontendDirLiteral = ConvertTo-SingleQuotedLiteral -Value $frontendDir
+$copilotBaseUrlLiteral = ConvertTo-SingleQuotedLiteral -Value $copilotBaseUrl
+$copilotPortLiteral = ConvertTo-SingleQuotedLiteral -Value $CopilotPort.ToString()
 
 $backendCommand = @"
 `$Host.UI.RawUI.WindowTitle = 'FitTrack.Copilot'
+`$env:ASPNETCORE_ENVIRONMENT = 'Development'
+`$env:ASPNETCORE_URLS = '$copilotBaseUrlLiteral'
 Set-Location '$repoRootLiteral'
-dotnet watch run --project '$copilotProjectLiteral'
+dotnet watch run --no-launch-profile --project '$copilotProjectLiteral'
 "@
 
 $frontendCommand = @"
 `$Host.UI.RawUI.WindowTitle = 'FitTrack.React'
+`$env:NEXT_PUBLIC_COPILOT_PORT = '$copilotPortLiteral'
 Set-Location '$frontendDirLiteral'
 npm run dev
 "@
@@ -99,7 +110,8 @@ $frontendProcess = Start-Process -FilePath 'powershell.exe' `
 
 Write-Host ''
 Write-Host 'Launched FitTrack development services:' -ForegroundColor Green
-Write-Host "  FitTrack.Copilot (PID $($backendProcess.Id)): https://localhost:7291 / http://localhost:5097"
+Write-Host "  FitTrack.Copilot (PID $($backendProcess.Id)): $copilotBaseUrl"
 Write-Host "  FitTrack.React   (PID $($frontendProcess.Id)): http://localhost:3000"
+Write-Host "  React API port env: NEXT_PUBLIC_COPILOT_PORT=$CopilotPort"
 Write-Host ''
 Write-Host 'Stop each service by closing its PowerShell window or pressing Ctrl+C inside that window.' -ForegroundColor Cyan

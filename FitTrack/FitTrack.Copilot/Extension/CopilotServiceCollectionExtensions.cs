@@ -78,7 +78,7 @@ public static class CopilotServiceCollectionExtensions
 
     private static void AddChatClient(this IServiceCollection services, IConfiguration configuration)
     {
-        // Register two keyed IChatClient singletons: "AzureOpenAI" and "MiniMax"
+        // Register keyed IChatClient singletons for each supported provider.
         services.AddKeyedSingleton<IChatClient>(AIProviderNames.AzureOpenAI, (sp, key) =>
             BuildChatClient(sp, configuration, "AI", ChatClientTransport.AzureOpenAI));
         services.AddKeyedSingleton<IChatClient>(AIProviderNames.MiniMax, (sp, key) =>
@@ -87,9 +87,9 @@ public static class CopilotServiceCollectionExtensions
             BuildChatClient(sp, configuration, "Xiaomi", ChatClientTransport.OpenAICompatible));
 
         // Default (non-keyed) IChatClient — used by SemanticKernel plugins that need
-        // IChatClient without user-specific routing. Resolves to AzureOpenAI by default.
+        // IChatClient without user-specific routing. Resolves to Xiaomi by default.
         services.AddSingleton<IChatClient>(sp =>
-            sp.GetRequiredKeyedService<IChatClient>(AIProviderNames.AzureOpenAI));
+            sp.GetRequiredKeyedService<IChatClient>(AIProviderNames.Xiaomi));
     }
 
     private static IChatClient BuildChatClient(

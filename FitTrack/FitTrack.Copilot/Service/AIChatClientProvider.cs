@@ -4,7 +4,7 @@ namespace FitTrack.Copilot.Service;
 
 public class AIChatClientProvider : IAIChatClientProvider
 {
-    private const string DefaultProvider = AIProviderNames.AzureOpenAI;
+    private const string DefaultProvider = AIProviderNames.Xiaomi;
 
     private readonly IProfileService _profileService;
     private readonly IServiceProvider _serviceProvider;

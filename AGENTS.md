@@ -71,7 +71,8 @@
 - 启动命令: `cd FitTrack/FitTrack.React; npm install; npm run dev`
 - 本地地址:
   - `http://localhost:3000`
-- 通过环境变量 `NEXT_PUBLIC_API_BASE_URL` 指向 `FitTrack.Copilot` API，默认值是 `https://localhost:7291`
+- 优先通过环境变量 `NEXT_PUBLIC_COPILOT_PORT` 拼接 `FitTrack.Copilot` API 地址，默认端口是 `5097`
+- 若需要指向非本地后端，可改用 `NEXT_PUBLIC_API_BASE_URL`
 - 前端主链路是线程式聊天工作台、饮食记录、训练记录和进度看板
 
 ### 一键联调脚本
@@ -82,6 +83,8 @@
   - 检查 `dotnet` 和 `npm` 是否可用
   - 若 `FitTrack/FitTrack.React/node_modules` 缺失，则先执行 `npm install`
   - 分别在两个独立 PowerShell 窗口中启动 `FitTrack.Copilot` 和 `FitTrack.React`
+  - 后端默认启动在 `http://localhost:5097`，也可通过 `-CopilotPort` 覆盖
+  - 通过 `NEXT_PUBLIC_COPILOT_PORT` 将后端端口传给前端
   - 后端使用 `dotnet watch run`，前端使用 `npm run dev`
 
 ## 5. 高风险区域

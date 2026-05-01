@@ -17,13 +17,21 @@ public class ProfileService : IProfileService
         var profile = await _dbContext.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId, ct);
         if (profile is not null)
         {
+            if (string.IsNullOrWhiteSpace(profile.PreferredAIProvider))
+            {
+                profile.PreferredAIProvider = AIProviderNames.Xiaomi;
+                profile.UpdatedAt = DateTime.UtcNow;
+                await _dbContext.SaveChangesAsync(ct);
+            }
+
             return profile;
         }
 
         profile = new UserProfile
         {
             UserId = userId,
-            DisplayName = email
+            DisplayName = email,
+            PreferredAIProvider = AIProviderNames.Xiaomi
         };
 
         _dbContext.UserProfiles.Add(profile);

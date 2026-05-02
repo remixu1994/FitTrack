@@ -33,3 +33,7 @@ bld/
 [Ll]ogs/
 .idea/
 bin/
+
+# SQLite runtime files
+*.db-wal
+*.db-shm

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace FitTrack.Copilot.SemanticKernel.Tooling;
+namespace FitTrack.Copilot.AI.Tooling;
 
 public static class JsonExtensions
 {
@@ -27,7 +27,7 @@ public static class JsonExtensions
     }
 
     /// <summary>
-    /// Shortcut for ChatMessageContent.Content → T.
+    /// Shortcut for object content → T.
     /// </summary>
     public static T? Deserialize<T>(this object? content)
     {

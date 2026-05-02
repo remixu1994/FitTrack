@@ -1,9 +1,8 @@
 using FitTrack.Copilot.Data;
 using FitTrack.Copilot.Service;
-using Microsoft.SemanticKernel;
 using System.ComponentModel;
 
-namespace FitTrack.Copilot.SemanticKernel.Plugins;
+namespace FitTrack.Copilot.AI.Plugins;
 
 public class WorkoutPlugin
 {
@@ -16,7 +15,7 @@ public class WorkoutPlugin
         _workoutSessionService = workoutSessionService;
     }
 
-    [KernelFunction, Description("Get workout plan recommendations based on fitness level and goals")]
+    [Description("Get workout plan recommendations based on fitness level and goals")]
     public async Task<string> GetWorkoutPlanRecommendationAsync(
         [Description("User's fitness level: beginner, intermediate, or advanced")] string fitnessLevel,
         [Description("User's fitness goal: weight_loss, muscle_gain, endurance, or general_fitness")] string fitnessGoal,
@@ -201,7 +200,7 @@ Sunday: Recovery",
         };
     }
 
-    [KernelFunction, Description("Get exercise instructions with proper form")]
+    [Description("Get exercise instructions with proper form")]
     public async Task<string> GetExerciseInstructionsAsync(
         [Description("Name of the exercise")] string exerciseName,
         CancellationToken ct = default)
@@ -305,7 +304,7 @@ Common Mistakes:
         };
     }
 
-    [KernelFunction, Description("Log a completed workout session")]
+    [Description("Log a completed workout session")]
     public async Task<string> LogWorkoutSessionAsync(
         [Description("User ID")] string userId,
         [Description("Workout type or plan name")] string workoutType,
@@ -334,7 +333,7 @@ Common Mistakes:
                $"Keep up the great work!";
     }
 
-    [KernelFunction, Description("Get workout history for a user")]
+    [Description("Get workout history for a user")]
     public async Task<string> GetWorkoutHistoryAsync(
         [Description("User ID")] string userId,
         [Description("Number of recent workouts to retrieve")] int count = 5,

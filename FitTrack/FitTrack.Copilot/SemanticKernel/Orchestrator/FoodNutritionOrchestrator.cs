@@ -1,8 +1,8 @@
 using FitTrack.Copilot.Abstractions.Models;
 using FitTrack.Copilot.Models;
-using FitTrack.Copilot.SemanticKernel.Plugins;
+using FitTrack.Copilot.AI.Plugins;
 
-namespace FitTrack.Copilot.SemanticKernel.Orchestrator;
+namespace FitTrack.Copilot.AI.Orchestrator;
 
 public class FoodNutritionOrchestrator
 {

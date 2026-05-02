@@ -2,7 +2,7 @@ using FitTrack.Copilot.Abstractions.Models;
 using FitTrack.Copilot.Api.Usda;
 using FoodDetail = FitTrack.Copilot.Api.Usda.Models.FoodDetail;
 
-namespace FitTrack.Copilot.SemanticKernel.Plugins;
+namespace FitTrack.Copilot.AI.Plugins;
 
 public class NutritionPlugin
 {

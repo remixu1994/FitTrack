@@ -22,7 +22,7 @@
   - AI 对话
   - 图片识别食物
   - USDA 食物数据查询
-  - Semantic Kernel / Agents / RAG 相关能力
+  - Microsoft.Agents.AI / RAG 相关能力
 - 当前新的实施主线是:
   - `FitTrack.Copilot` 作为 `.NET 10` API + Agent Host
   - `FitTrack.React` 作为主前端工作台
@@ -111,6 +111,7 @@
 ## 7. Chat Runtime（2026-05）
 
 - `FitTrack.Copilot` 当前已经移除 Python chat provider、内部 tool API 映射和 sidecar 依赖。
+- `FitTrack.Copilot` 当前已经移除对 `Microsoft.SemanticKernel` NuGet 包的运行时依赖，聊天主线以 `Microsoft.Agents.AI` 和 `Microsoft.Extensions.AI` 为主。
 - 当前聊天主链路是 `FitTrack.React -> FitTrack.Copilot -> in-process CoachSupervisorAgent`。
 - `FitTrack.Copilot` 负责:
   - JWT / refresh cookie

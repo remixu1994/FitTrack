@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.AI;
-using Microsoft.SemanticKernel;
 
 namespace FitTrack.Copilot.Middleware;
 

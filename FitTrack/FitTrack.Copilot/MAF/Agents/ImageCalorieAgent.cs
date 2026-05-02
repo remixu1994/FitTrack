@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using FitTrack.Copilot.Abstractions;
 using FitTrack.Copilot.Abstractions.Models;
 using FitTrack.Copilot.Models;
-using FitTrack.Copilot.SemanticKernel.Orchestrator;
+using FitTrack.Copilot.AI.Orchestrator;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 

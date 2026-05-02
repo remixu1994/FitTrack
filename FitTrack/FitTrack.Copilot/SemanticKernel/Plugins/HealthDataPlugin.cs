@@ -1,9 +1,8 @@
 using FitTrack.Copilot.Data;
 using FitTrack.Copilot.Service;
-using Microsoft.SemanticKernel;
 using System.ComponentModel;
 
-namespace FitTrack.Copilot.SemanticKernel.Plugins;
+namespace FitTrack.Copilot.AI.Plugins;
 
 public class HealthDataPlugin
 {
@@ -21,7 +20,7 @@ public class HealthDataPlugin
         _foodRecordService = foodRecordService;
     }
 
-    [KernelFunction, Description("Record user's body weight")]
+    [Description("Record user's body weight")]
     public async Task<string> RecordWeightAsync(
         [Description("User ID")] string userId,
         [Description("Weight in kg")] double weight,
@@ -44,7 +43,7 @@ public class HealthDataPlugin
                "Keep tracking your progress!";
     }
 
-    [KernelFunction, Description("Get weight tracking history")]
+    [Description("Get weight tracking history")]
     public async Task<string> GetWeightHistoryAsync(
         [Description("User ID")] string userId,
         [Description("Number of days to look back")] int days = 30,
@@ -72,7 +71,7 @@ public class HealthDataPlugin
         return result;
     }
 
-    [KernelFunction, Description("Calculate BMI based on weight and height")]
+    [Description("Calculate BMI based on weight and height")]
     public string CalculateBMI(
         [Description("Weight in kg")] double weightKg,
         [Description("Height in cm")] double heightCm)
@@ -112,7 +111,7 @@ public class HealthDataPlugin
                $"Advice: {advice}";
     }
 
-    [KernelFunction, Description("Get nutrition summary for a specific date")]
+    [Description("Get nutrition summary for a specific date")]
     public async Task<string> GetNutritionSummaryAsync(
         [Description("User ID")] string userId,
         [Description("Date for nutrition summary")] DateTime date,
@@ -133,7 +132,7 @@ public class HealthDataPlugin
                $"Food Items: {summary.RecordCount}";
     }
 
-    [KernelFunction, Description("Calculate daily calorie needs based on user stats")]
+    [Description("Calculate daily calorie needs based on user stats")]
     public string CalculateCalorieNeeds(
         [Description("Weight in kg")] double weightKg,
         [Description("Height in cm")] double heightCm,
@@ -166,7 +165,7 @@ public class HealthDataPlugin
                $"Weight Gain (+500 kcal): {tdee + 500:F0} kcal/day";
     }
 
-    [KernelFunction, Description("Generate a comprehensive health report")]
+    [Description("Generate a comprehensive health report")]
     public async Task<string> GenerateHealthReportAsync(
         [Description("User ID")] string userId,
         [Description("Height in cm for BMI calculation")] double heightCm,

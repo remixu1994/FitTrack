@@ -1,10 +1,10 @@
 using FitTrack.Copilot.Models;
-using FitTrack.Copilot.SemanticKernel.Tooling;
+using FitTrack.Copilot.AI.Tooling;
 using Microsoft.Extensions.AI;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using ChatResponseFormat = Microsoft.Extensions.AI.ChatResponseFormat;
 
-namespace FitTrack.Copilot.SemanticKernel.Plugins;
+namespace FitTrack.Copilot.AI.Plugins;
 
 /// <summary>
 /// Extracts structured food items from natural language meal descriptions.

@@ -1,7 +1,7 @@
-using FitTrack.Copilot.SemanticKernel.RAG;
+using FitTrack.Copilot.AI.RAG;
 using Microsoft.Extensions.AI;
 
-namespace FitTrack.Copilot.SemanticKernel.RAG;
+namespace FitTrack.Copilot.AI.RAG;
 
 public interface IRAGService
 {

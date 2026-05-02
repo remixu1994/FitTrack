@@ -1,6 +1,6 @@
 using FitTrack.Copilot.Abstractions.Models;
-using FitTrack.Copilot.SemanticKernel.Plugins;
-using FitTrack.Copilot.SemanticKernel.RAG;
+using FitTrack.Copilot.AI.Plugins;
+using FitTrack.Copilot.AI.RAG;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using System.ComponentModel;

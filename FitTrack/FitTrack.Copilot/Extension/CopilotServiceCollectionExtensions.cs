@@ -5,14 +5,13 @@ using System.ClientModel;
 using FitTrack.Copilot.Agents;
 using FitTrack.Copilot.Middleware;
 using FitTrack.Copilot.Configuration;
-using FitTrack.Copilot.SemanticKernel.Orchestrator;
-using FitTrack.Copilot.SemanticKernel.Plugins;
-using FitTrack.Copilot.SemanticKernel.RAG;
-using FitTrack.Copilot.SemanticKernel.Tooling;
+using FitTrack.Copilot.AI.Orchestrator;
+using FitTrack.Copilot.AI.Plugins;
+using FitTrack.Copilot.AI.RAG;
+using FitTrack.Copilot.AI.Tooling;
 using FitTrack.Copilot.Service;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.SemanticKernel;
 
 namespace FitTrack.Copilot.Extension;
 
@@ -25,7 +24,7 @@ public static class CopilotServiceCollectionExtensions
         services.AddSingleton<PromptLoader>();
         services.AddChatClient(configuration);
 
-        // Register Semantic Kernel plugins
+        // Register AI helper plugins
         services.AddTransient<VisionFoodRecognitionPlugin>();
         services.AddTransient<TextFoodRecognitionPlugin>();
         services.AddTransient<NutritionPlugin>();
@@ -79,7 +78,7 @@ public static class CopilotServiceCollectionExtensions
         services.AddKeyedSingleton<IChatClient>(AIProviderNames.Xiaomi, (sp, key) =>
             BuildChatClient(sp, configuration, "Xiaomi", ChatClientTransport.OpenAICompatible));
 
-        // Default (non-keyed) IChatClient — used by SemanticKernel plugins that need
+        // Default (non-keyed) IChatClient — used by AI plugins that need
         // IChatClient without user-specific routing. Resolves to Xiaomi by default.
         services.AddSingleton<IChatClient>(sp =>
             sp.GetRequiredKeyedService<IChatClient>(AIProviderNames.Xiaomi));

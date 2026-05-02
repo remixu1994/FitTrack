@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace FitTrack.Copilot.SemanticKernel.RAG;
+namespace FitTrack.Copilot.AI.RAG;
 
 public class FitnessKnowledge
 {

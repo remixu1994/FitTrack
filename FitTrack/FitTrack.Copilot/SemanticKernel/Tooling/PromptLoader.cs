@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Reflection;
 using Microsoft.Extensions.Options;
 
-namespace FitTrack.Copilot.SemanticKernel.Tooling;
+namespace FitTrack.Copilot.AI.Tooling;
 
 /// <summary>
 /// Loads prompt texts from disk or embedded resources with in-memory caching.
@@ -99,7 +99,7 @@ public sealed class PromptLoader
 
     private IEnumerable<string> BuildResourceCandidates(string name, CultureInfo culture, string? prefix)
     {
-        // default prefix: "FitTrack.Copilot.SemanticKernel.Plugins.SystemPrompt"
+        // default prefix: "FitTrack.Copilot.AI.Plugins.SystemPrompt"
         var pfx = string.IsNullOrWhiteSpace(prefix)
             ? $"{_resourceAssembly.GetName().Name}.Plugins.SystemPrompt"
             : prefix.TrimEnd('.');
@@ -117,7 +117,7 @@ public sealed class PromptLoader
 public sealed class PromptOptions
 {
     /// <summary>Root directory for prompt files (absolute or relative to app base).</summary>
-    public string? RootDirectory { get; set; } = "src/FitTrack.Copilot.SemanticKernel/Plugins/SystemPrompt";
+    public string? RootDirectory { get; set; } = "FitTrack.Copilot/AI/Plugins/SystemPrompt";
 
     /// <summary>Where to look for embedded resources (namespace-like prefix).</summary>
     public string? ResourcePrefix { get; set; } = null; // default to {AssemblyName}.Plugins.SystemPrompt

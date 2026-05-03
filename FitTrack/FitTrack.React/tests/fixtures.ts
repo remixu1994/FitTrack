@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test'
+import { expect, type Page, type Route } from '@playwright/test'
 
 type AuthenticatedUser = {
   id: string
@@ -27,7 +27,7 @@ function ok<T>(data: T) {
   }
 }
 
-async function fulfillJson(route: Parameters<Page['route']>[1] extends (arg: infer T) => unknown ? T : never, body: unknown, status = 200) {
+async function fulfillJson(route: Route, body: unknown, status = 200) {
   if (route.request().method() === 'OPTIONS') {
     await route.fulfill({
       status: 204,

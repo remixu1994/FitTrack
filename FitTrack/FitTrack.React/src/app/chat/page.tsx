@@ -3,7 +3,7 @@ import { AppShell } from '@/components/layout/app-shell'
 
 export default function ChatPage() {
   return (
-    <AppShell title="Coach">
+    <AppShell title="Fitness Coach" hideHeader immersive>
       <ChatView />
     </AppShell>
   )

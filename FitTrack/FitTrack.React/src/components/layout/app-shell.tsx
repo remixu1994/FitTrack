@@ -16,7 +16,14 @@ const navItems = [
   { href: '/settings/profile', label: 'Profile' },
 ]
 
-export function AppShell({ title, children }: { title: string; children: React.ReactNode }) {
+type AppShellProps = {
+  title: string
+  children: React.ReactNode
+  hideHeader?: boolean
+  immersive?: boolean
+}
+
+export function AppShell({ title, children, hideHeader = false, immersive = false }: AppShellProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<AuthenticatedUser | null>(null)
@@ -79,16 +86,22 @@ export function AppShell({ title, children }: { title: string; children: React.R
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.24),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.18),_transparent_25%),linear-gradient(180deg,_#07111f_0%,_#050b14_100%)] text-sm uppercase tracking-[0.35em] text-cyan-300">
+      <div
+        suppressHydrationWarning
+        className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.24),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.18),_transparent_25%),linear-gradient(180deg,_#07111f_0%,_#050b14_100%)] text-sm uppercase tracking-[0.35em] text-cyan-300"
+      >
         Loading workspace
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.24),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.18),_transparent_25%),linear-gradient(180deg,_#07111f_0%,_#050b14_100%)] text-slate-50">
-      <div className="mx-auto grid min-h-screen max-w-[1600px] grid-cols-1 lg:grid-cols-[250px_minmax(0,1fr)]">
-        <aside className="border-b border-white/10 bg-slate-950/60 p-6 backdrop-blur lg:border-b-0 lg:border-r">
+    <div
+      suppressHydrationWarning
+      className={`${immersive ? 'min-h-screen xl:h-screen xl:overflow-hidden' : 'min-h-screen'} bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.24),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.18),_transparent_25%),linear-gradient(180deg,_#07111f_0%,_#050b14_100%)] text-slate-50`}
+    >
+      <div className={`mx-auto grid min-h-screen max-w-[1600px] grid-cols-1 lg:grid-cols-[250px_minmax(0,1fr)] ${immersive ? 'xl:h-full' : ''}`}>
+        <aside className={`border-b border-white/10 bg-slate-950/60 p-6 backdrop-blur lg:border-b-0 lg:border-r ${immersive ? 'xl:flex xl:min-h-0 xl:flex-col xl:overflow-y-auto' : ''}`}>
           <p className="text-xs uppercase tracking-[0.45em] text-cyan-300">FitTrack</p>
           <h1 className="mt-3 text-2xl font-semibold text-white">Performance Workspace</h1>
           <p className="mt-2 text-sm text-slate-400">Next.js frontend for coaching, food, training, and weekly check-ins.</p>
@@ -108,7 +121,7 @@ export function AppShell({ title, children }: { title: string; children: React.R
               )
             })}
           </nav>
-          <div className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-4 text-sm">
+          <div className={`mt-8 rounded-3xl border border-white/10 bg-white/5 p-4 text-sm ${immersive ? 'xl:mt-auto' : ''}`}>
             <p className="text-slate-400">Signed in as</p>
             <p className="mt-1 font-medium text-white">{user?.displayName || user?.email || 'Unknown user'}</p>
             <button
@@ -122,12 +135,14 @@ export function AppShell({ title, children }: { title: string; children: React.R
             </button>
           </div>
         </aside>
-        <main className="min-w-0 p-6 lg:p-10">
-          <header className="mb-8">
-            <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">Workspace</p>
-            <h2 className="mt-2 text-3xl font-semibold text-white">{title}</h2>
-          </header>
-          {children}
+        <main className={`min-w-0 p-6 lg:p-10 ${immersive ? 'xl:flex xl:min-h-0 xl:flex-col xl:overflow-hidden' : ''}`}>
+          {!hideHeader ? (
+            <header className="mb-8 shrink-0">
+              <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">Workspace</p>
+              <h2 className="mt-2 text-3xl font-semibold text-white">{title}</h2>
+            </header>
+          ) : null}
+          <div className={immersive ? 'xl:min-h-0 xl:flex-1 xl:overflow-hidden' : ''}>{children}</div>
         </main>
       </div>
     </div>

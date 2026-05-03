@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
+import { frontendBaseUrl, useManagedServers } from './playwright.e2e-env'
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -8,17 +10,15 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: frontendBaseUrl,
     trace: 'on-first-retry',
   },
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    stdout: 'pipe',
-    stderr: 'pipe',
-    timeout: 120 * 1000,
-  },
+  ...(useManagedServers
+    ? {
+        globalSetup: './playwright.global-setup.ts',
+        globalTeardown: './playwright.global-teardown.ts',
+      }
+    : {}),
   projects: [
     {
       name: 'chromium',

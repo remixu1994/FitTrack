@@ -1,12 +1,10 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import { login } from '@/lib/http'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -26,7 +24,7 @@ export default function LoginPage() {
             setError(null)
             try {
               await login(email, password)
-              router.replace('/chat')
+              window.location.replace('/chat')
             } catch (loginError) {
               setError(loginError instanceof Error ? loginError.message : 'Login failed')
             } finally {

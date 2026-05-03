@@ -78,6 +78,7 @@ else {
 }
 
 $repoRootLiteral = ConvertTo-SingleQuotedLiteral -Value $repoRoot
+$copilotDirLiteral = ConvertTo-SingleQuotedLiteral -Value $copilotDir
 $copilotProjectLiteral = ConvertTo-SingleQuotedLiteral -Value $copilotProject
 $frontendDirLiteral = ConvertTo-SingleQuotedLiteral -Value $frontendDir
 $copilotBaseUrlLiteral = ConvertTo-SingleQuotedLiteral -Value $copilotBaseUrl
@@ -87,8 +88,8 @@ $backendCommand = @"
 `$Host.UI.RawUI.WindowTitle = 'FitTrack.Copilot'
 `$env:ASPNETCORE_ENVIRONMENT = 'Development'
 `$env:ASPNETCORE_URLS = '$copilotBaseUrlLiteral'
-Set-Location '$repoRootLiteral'
-dotnet watch run --no-launch-profile --project '$copilotProjectLiteral'
+Set-Location '$copilotDirLiteral'
+dotnet watch run --no-launch-profile
 "@
 
 $frontendCommand = @"

@@ -38,7 +38,6 @@ public sealed class TextFoodRecognitionPlugin(IChatClient chatClient)
 
         var options = new ChatOptions
         {
-            ModelId = "gpt-4o-mini",
             Temperature = 0.1f,
             MaxOutputTokens = 600,
             ResponseFormat = ChatResponseFormat.Json

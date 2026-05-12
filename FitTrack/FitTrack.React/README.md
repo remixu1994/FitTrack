@@ -2,7 +2,7 @@
 
 `FitTrack.React` is the React + Next.js frontend site for FitTrack.
 
-## Development
+## Developmentr
 
 ```bash
 npm install

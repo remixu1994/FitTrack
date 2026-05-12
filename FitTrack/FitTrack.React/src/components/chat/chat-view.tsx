@@ -59,7 +59,7 @@ const markdownComponents: Components = {
   },
 }
 
-export function ChatView() {
+export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
   const [threads, setThreads] = useState<ConversationThread[]>([])
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
   const [threadDetail, setThreadDetail] = useState<ThreadDetail | null>(null)
@@ -76,6 +76,8 @@ export function ChatView() {
   const listRef = useRef<HTMLDivElement | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const autoScrollRef = useRef(true)
+  const appliedDraftRef = useRef<string | null>(null)
+  const draftMessage = initialDraft.trim()
 
   const lastSnapshot = threadDetail?.snapshots?.[0] ?? null
   const latestMealAnalysis = useMemo(
@@ -164,6 +166,15 @@ export function ChatView() {
     if (!activeThreadId) return
     void loadThread(activeThreadId)
   }, [activeThreadId, loadThread])
+
+  useEffect(() => {
+    if (!activeThreadId || !draftMessage) return
+    if (appliedDraftRef.current === draftMessage) return
+
+    setMessage((current) => current || draftMessage)
+    appliedDraftRef.current = draftMessage
+    textareaRef.current?.focus()
+  }, [activeThreadId, draftMessage])
 
   const handleScroll = useCallback(() => {
     const el = listRef.current

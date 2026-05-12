@@ -1,6 +1,9 @@
 param(
     [ValidateRange(1, 65535)]
-    [int]$CopilotPort = 5097
+    [int]$CopilotPort = 5097,
+
+    [ValidateSet('Backend', 'Frontend', 'None')]
+    [string]$FocusWindow = 'Backend'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -42,6 +45,30 @@ function ConvertTo-SingleQuotedLiteral {
     )
 
     return $Value.Replace("'", "''")
+}
+
+function Show-ProcessWindow {
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Diagnostics.Process]$Process
+    )
+
+    $shell = New-Object -ComObject WScript.Shell
+
+    for ($attempt = 0; $attempt -lt 20; $attempt++) {
+        Start-Sleep -Milliseconds 250
+
+        try {
+            if ($shell.AppActivate($Process.Id)) {
+                return $true
+            }
+        }
+        catch {
+            # Ignore activation races while the window is still being created.
+        }
+    }
+
+    return $false
 }
 
 $repoRoot = $PSScriptRoot
@@ -86,10 +113,11 @@ $copilotPortLiteral = ConvertTo-SingleQuotedLiteral -Value $CopilotPort.ToString
 
 $backendCommand = @"
 `$Host.UI.RawUI.WindowTitle = 'FitTrack.Copilot'
+`$env:DOTNET_ENVIRONMENT = 'Development'
 `$env:ASPNETCORE_ENVIRONMENT = 'Development'
 `$env:ASPNETCORE_URLS = '$copilotBaseUrlLiteral'
 Set-Location '$copilotDirLiteral'
-dotnet watch run --no-launch-profile
+dotnet watch --project '$copilotProjectLiteral' run --no-launch-profile
 "@
 
 $frontendCommand = @"
@@ -102,17 +130,29 @@ npm run dev
 $backendProcess = Start-Process -FilePath 'powershell.exe' `
     -WorkingDirectory $repoRoot `
     -ArgumentList @('-NoLogo', '-NoExit', '-ExecutionPolicy', 'Bypass', '-Command', $backendCommand) `
+    -WindowStyle Normal `
     -PassThru
 
 $frontendProcess = Start-Process -FilePath 'powershell.exe' `
     -WorkingDirectory $frontendDir `
     -ArgumentList @('-NoLogo', '-NoExit', '-ExecutionPolicy', 'Bypass', '-Command', $frontendCommand) `
+    -WindowStyle Normal `
     -PassThru
+
+switch ($FocusWindow) {
+    'Backend' {
+        [void](Show-ProcessWindow -Process $backendProcess)
+    }
+    'Frontend' {
+        [void](Show-ProcessWindow -Process $frontendProcess)
+    }
+}
 
 Write-Host ''
 Write-Host 'Launched FitTrack development services:' -ForegroundColor Green
 Write-Host "  FitTrack.Copilot (PID $($backendProcess.Id)): $copilotBaseUrl"
 Write-Host "  FitTrack.React   (PID $($frontendProcess.Id)): http://localhost:3000"
 Write-Host "  React API port env: NEXT_PUBLIC_COPILOT_PORT=$CopilotPort"
+Write-Host "  Focused window: $FocusWindow"
 Write-Host ''
 Write-Host 'Stop each service by closing its PowerShell window or pressing Ctrl+C inside that window.' -ForegroundColor Cyan

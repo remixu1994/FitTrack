@@ -5,15 +5,15 @@ export default function Home() {
         <p className="text-xs uppercase tracking-[0.45em] text-cyan-300">FitTrack</p>
         <h1 className="mt-4 text-5xl font-semibold">Next.js workspace for the .NET 10 coaching backend</h1>
         <p className="mx-auto mt-6 max-w-2xl text-base text-slate-300">
-          The frontend now lives separately from the ASP.NET host. Sign in, open the coach, and work with thread-based nutrition,
-          workout, and progress conversations.
+          The frontend now lives separately from the ASP.NET host. Sign in, start from Today, then move into guided nutrition,
+          training, and review workflows backed by the coaching API.
         </p>
         <div className="mt-8 flex justify-center gap-4">
           <a href="/login" className="rounded-full bg-cyan-300 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-slate-950">
             Login
           </a>
-          <a href="/chat" className="rounded-full border border-white/10 px-6 py-3 text-sm uppercase tracking-[0.3em] text-white">
-            Open Coach
+          <a href="/today" className="rounded-full border border-white/10 px-6 py-3 text-sm uppercase tracking-[0.3em] text-white">
+            Open Today
           </a>
         </div>
       </div>

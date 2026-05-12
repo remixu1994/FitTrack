@@ -37,3 +37,11 @@ bin/
 # SQLite runtime files
 *.db-wal
 *.db-shm
+
+# Local frontend environment and caches
+FitTrack.Web/.env.local
+FitTrack.Web/.next/
+FitTrack.Web/node_modules/
+
+# Local attachment storage
+FitTrack/FitTrack.Copilot/Data/attachments/

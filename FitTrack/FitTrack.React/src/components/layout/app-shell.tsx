@@ -9,6 +9,7 @@ import { getCurrentUser, logout, refreshSession } from '@/lib/http'
 import type { AuthenticatedUser } from '@/types/fittrack'
 
 const navItems = [
+  { href: '/today', label: 'Today' },
   { href: '/chat', label: 'Coach' },
   { href: '/food-records', label: 'Food' },
   { href: '/workouts', label: 'Workouts' },
@@ -84,23 +85,21 @@ export function AppShell({ title, children, hideHeader = false, immersive = fals
     }
   }, [])
 
-  if (!ready) {
-    return (
-      <div
-        suppressHydrationWarning
-        className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.24),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.18),_transparent_25%),linear-gradient(180deg,_#07111f_0%,_#050b14_100%)] text-sm uppercase tracking-[0.35em] text-cyan-300"
-      >
-        Loading workspace
-      </div>
-    )
-  }
-
   return (
     <div
-      suppressHydrationWarning
       className={`${immersive ? 'min-h-screen xl:h-screen xl:overflow-hidden' : 'min-h-screen'} bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.24),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.18),_transparent_25%),linear-gradient(180deg,_#07111f_0%,_#050b14_100%)] text-slate-50`}
     >
-      <div className={`mx-auto grid min-h-screen max-w-[1600px] grid-cols-1 lg:grid-cols-[250px_minmax(0,1fr)] ${immersive ? 'xl:h-full' : ''}`}>
+      {!ready ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.24),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.18),_transparent_25%),linear-gradient(180deg,_rgba(7,17,31,0.96)_0%,_rgba(5,11,20,0.98)_100%)] text-sm uppercase tracking-[0.35em] text-cyan-300">
+          Loading workspace
+        </div>
+      ) : null}
+      <div
+        aria-hidden={!ready}
+        className={`mx-auto grid min-h-screen max-w-[1600px] grid-cols-1 transition-opacity duration-200 lg:grid-cols-[250px_minmax(0,1fr)] ${immersive ? 'xl:h-full' : ''} ${
+          ready ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+      >
         <aside className={`border-b border-white/10 bg-slate-950/60 p-6 backdrop-blur lg:border-b-0 lg:border-r ${immersive ? 'xl:flex xl:min-h-0 xl:flex-col xl:overflow-y-auto' : ''}`}>
           <p className="text-xs uppercase tracking-[0.45em] text-cyan-300">FitTrack</p>
           <h1 className="mt-3 text-2xl font-semibold text-white">Performance Workspace</h1>

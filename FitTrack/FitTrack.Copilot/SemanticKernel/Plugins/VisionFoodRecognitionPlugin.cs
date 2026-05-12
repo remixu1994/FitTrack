@@ -19,7 +19,6 @@ public sealed class VisionFoodRecognitionPlugin(IChatClient chatClient, PromptLo
 
         var options = new ChatOptions
         {
-            ModelId = "gpt-4o-mini",
             Temperature = 0.2f,
             MaxOutputTokens = 800,
             ResponseFormat = ChatResponseFormat.Json

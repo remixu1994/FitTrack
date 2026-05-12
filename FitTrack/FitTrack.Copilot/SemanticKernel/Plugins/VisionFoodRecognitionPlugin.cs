@@ -1,6 +1,7 @@
 using FitTrack.Copilot.Abstractions;
 using FitTrack.Copilot.Models;
 using FitTrack.Copilot.AI.Tooling;
+using FitTrack.Copilot.Service;
 using Microsoft.Extensions.AI;
 using System.Text.Json;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
@@ -8,13 +9,24 @@ using ChatResponseFormat = Microsoft.Extensions.AI.ChatResponseFormat;
 
 namespace FitTrack.Copilot.AI.Plugins;
 
-public sealed class VisionFoodRecognitionPlugin(IChatClient chatClient, PromptLoader prompts)
+public sealed class VisionFoodRecognitionPlugin
 {
+    private readonly IAIChatClientFactory _chatClientFactory;
+    private readonly PromptLoader _prompts;
+
+    public VisionFoodRecognitionPlugin(IAIChatClientFactory chatClientFactory, PromptLoader prompts)
+    {
+        _chatClientFactory = chatClientFactory;
+        _prompts = prompts;
+    }
+
     /// <summary>
     /// Analyze food images and return a list of recognized food items
     /// </summary>
     public async Task<List<FoodItem>> RecognizeFoodFromImagesAsync(VisionNutritionInput input, CancellationToken ct)
     {
+        var userId = string.IsNullOrWhiteSpace(input.UserId) ? "anonymous" : input.UserId;
+        var chatClient = await _chatClientFactory.CreateAsync(userId, ct);
         var messages = await BuildVisionMessagesAsync(input, ct);
 
         var options = new ChatOptions
@@ -26,13 +38,13 @@ public sealed class VisionFoodRecognitionPlugin(IChatClient chatClient, PromptLo
 
         var response = await chatClient.GetResponseAsync(messages, options, ct);
         var foodItems = ParseFoodItems(response.Text);
-        
-        return foodItems?.Where(item => !string.IsNullOrEmpty(item.Name)).ToList() ?? new List<FoodItem>();
+
+        return foodItems?.Where(item => !string.IsNullOrEmpty(item.Name)).ToList() ?? [];
     }
 
     private async Task<List<ChatMessage>> BuildVisionMessagesAsync(VisionNutritionInput input, CancellationToken ct)
     {
-        var systemPrompt = await prompts.LoadAsync("vision_nutrition.system.md", ct);
+        var systemPrompt = await _prompts.LoadAsync("vision_nutrition.system.md", ct);
 
         var messages = new List<ChatMessage>
         {
@@ -58,7 +70,7 @@ public sealed class VisionFoodRecognitionPlugin(IChatClient chatClient, PromptLo
                     });
             }));
         }
-        
+
         return messages;
     }
 
@@ -69,14 +81,12 @@ public sealed class VisionFoodRecognitionPlugin(IChatClient chatClient, PromptLo
             return null;
         }
 
-        // Case 1: direct JSON array
         var direct = text.Deserialize<List<FoodItem>>();
         if (direct is { Count: > 0 })
         {
             return direct;
         }
 
-        // Case 2: wrapped object { "items": [...] }
         try
         {
             var wrapped = JsonSerializer.Deserialize<FoodItemsWrapper>(text, new JsonSerializerOptions
@@ -93,6 +103,6 @@ public sealed class VisionFoodRecognitionPlugin(IChatClient chatClient, PromptLo
 
     private sealed class FoodItemsWrapper
     {
-        public List<FoodItem> Items { get; set; } = new();
+        public List<FoodItem> Items { get; set; } = [];
     }
 }

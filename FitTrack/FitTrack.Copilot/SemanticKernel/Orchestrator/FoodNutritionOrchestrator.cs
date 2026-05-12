@@ -37,7 +37,7 @@ public class FoodNutritionOrchestrator
 
         if (!string.IsNullOrWhiteSpace(input.Hint))
         {
-            var textItems = await _textPlugin.RecognizeFoodFromTextAsync(input.Hint, ct);
+            var textItems = await _textPlugin.RecognizeFoodFromTextAsync(input.UserId ?? "anonymous", input.Hint, ct);
             recognizedFoodItems.AddRange(textItems);
         }
 

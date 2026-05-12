@@ -6,6 +6,8 @@ namespace FitTrack.Copilot.Data;
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
     : IdentityDbContext<ApplicationUser>(options)
 {
+    public DbSet<Tenant> Tenants { get; set; }
+    public DbSet<TenantModelConnector> TenantModelConnectors { get; set; }
     public DbSet<UserProfile> UserProfiles { get; set; }
     public DbSet<ConversationThread> ConversationThreads { get; set; }
     public DbSet<ConversationMessage> ConversationMessages { get; set; }
@@ -26,11 +28,47 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<Tenant>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(160);
+            entity.Property(e => e.Slug).IsRequired().HasMaxLength(80);
+            entity.HasIndex(e => e.Slug).IsUnique();
+        });
+
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            entity.Property(e => e.TenantId).IsRequired();
+            entity.HasIndex(e => e.TenantId);
+            entity.HasOne(e => e.Tenant)
+                .WithMany(e => e.Users)
+                .HasForeignKey(e => e.TenantId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<TenantModelConnector>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TenantId).IsRequired();
+            entity.Property(e => e.DisplayName).IsRequired().HasMaxLength(160);
+            entity.Property(e => e.ProviderPreset).IsRequired().HasMaxLength(80);
+            entity.Property(e => e.Protocol).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.BaseUrl).IsRequired().HasMaxLength(512);
+            entity.Property(e => e.ModelId).IsRequired().HasMaxLength(160);
+            entity.HasIndex(e => new { e.TenantId, e.DisplayName });
+            entity.HasIndex(e => new { e.TenantId, e.IsDefault });
+            entity.HasOne(e => e.Tenant)
+                .WithMany(e => e.ModelConnectors)
+                .HasForeignKey(e => e.TenantId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<UserProfile>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.UserId).IsRequired();
             entity.HasIndex(e => e.UserId).IsUnique();
+            entity.HasIndex(e => e.PreferredModelConnectorId);
             entity.HasOne(e => e.User)
                 .WithOne(u => u.Profile)
                 .HasForeignKey<UserProfile>(e => e.UserId)

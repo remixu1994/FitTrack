@@ -4,38 +4,39 @@ namespace FitTrack.Copilot.Service;
 
 public class AIChatClientFactory : IAIChatClientFactory
 {
-    private const string DefaultProvider = AIProviderNames.Xiaomi;
-
-    private readonly IProfileService _profileService;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly ITenantModelConnectorService _tenantModelConnectorService;
+    private readonly IModelConnectorChatClientBuilder _chatClientBuilder;
+    private readonly IConnectorSecretProtector _secretProtector;
     private readonly ILogger<AIChatClientFactory> _logger;
 
     public AIChatClientFactory(
-        IProfileService profileService,
-        IServiceProvider serviceProvider,
+        ITenantModelConnectorService tenantModelConnectorService,
+        IModelConnectorChatClientBuilder chatClientBuilder,
+        IConnectorSecretProtector secretProtector,
         ILogger<AIChatClientFactory> logger)
     {
-        _profileService = profileService;
-        _serviceProvider = serviceProvider;
+        _tenantModelConnectorService = tenantModelConnectorService;
+        _chatClientBuilder = chatClientBuilder;
+        _secretProtector = secretProtector;
         _logger = logger;
     }
 
     public async Task<IChatClient> CreateAsync(string userId, CancellationToken ct = default)
     {
-        var profile = await _profileService.GetOrCreateProfileAsync(userId, null, ct);
-        var provider = profile.PreferredAIProvider ?? DefaultProvider;
-        var chatClient = _serviceProvider.GetKeyedService<IChatClient>(provider);
-        if (chatClient is not null)
+        var connector = await _tenantModelConnectorService.ResolveConnectorForUserAsync(userId, ct);
+        if (connector is null)
         {
-            return chatClient;
+            _logger.LogWarning("No enabled tenant model connector is available for user {UserId}.", userId);
+            throw new InvalidOperationException("No enabled tenant model connector is configured for this user.");
         }
 
-        _logger.LogWarning(
-            "Unknown AI provider {Provider} for user {UserId}. Falling back to {FallbackProvider}.",
-            provider,
-            userId,
-            DefaultProvider);
+        if (string.IsNullOrWhiteSpace(connector.EncryptedApiKey))
+        {
+            _logger.LogWarning("Connector {ConnectorId} for user {UserId} is missing an API key.", connector.Id, userId);
+            throw new InvalidOperationException($"Connector '{connector.DisplayName}' is missing an API key.");
+        }
 
-        return _serviceProvider.GetRequiredKeyedService<IChatClient>(DefaultProvider);
+        var apiKey = _secretProtector.Unprotect(connector.EncryptedApiKey);
+        return _chatClientBuilder.Build(connector, apiKey);
     }
 }

@@ -21,6 +21,7 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 builder.Services.AddOpenApi();
+builder.Services.AddDataProtection();
 builder.Services.AddMemoryCache();
 builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks();
@@ -189,6 +190,8 @@ MapFrontendRedirect("/settings/profile", "settings/profile");
 app.MapHealthChecks("/health");
 app.MapAuthEndpoints();
 app.MapProfileEndpoints();
+app.MapModelConnectorEndpoints();
+app.MapAdminTenantModelConnectorEndpoints();
 app.MapChatEndpoints();
 app.MapFoodApiEndpoints();
 app.MapWorkoutApiEndpoints();

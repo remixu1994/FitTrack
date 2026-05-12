@@ -5,28 +5,29 @@ import { useState } from 'react'
 
 import { AppShell } from '@/components/layout/app-shell'
 import { apiFetch, getCurrentUser } from '@/lib/http'
-import type { UserProfile } from '@/types/fittrack'
-
-const AI_PROVIDER_OPTIONS = [
-  { value: 'AzureOpenAI', label: 'Azure OpenAI' },
-  { value: 'MiniMax', label: 'MiniMax' },
-  { value: 'Xiaomi', label: 'Xiaomi MiMo' },
-] as const
+import type { TenantModelConnectorOption, UserProfile } from '@/types/fittrack'
 
 export default function ProfileSettingsPage() {
-  const query = useQuery({
+  const profileQuery = useQuery({
     queryKey: ['profile'],
     queryFn: () => apiFetch<UserProfile>('/api/profile'),
   })
+  const connectorQuery = useQuery({
+    queryKey: ['model-connectors'],
+    queryFn: () => apiFetch<TenantModelConnectorOption[]>('/api/model-connectors'),
+  })
 
   const [saving, setSaving] = useState(false)
-  const profile = query.data
+  const profile = profileQuery.data
+  const connectors = connectorQuery.data ?? []
+  const loading = profileQuery.isLoading || connectorQuery.isLoading
 
   return (
     <AppShell title="Profile">
       <div className="rounded-[32px] border border-white/10 bg-slate-950/50 p-6">
         <p className="text-sm text-slate-400">Your baseline stats guide the multi-turn coaching context for food, training, and progress reviews.</p>
         <form
+          key={profile?.updatedAt ?? 'profile-loading'}
           className="mt-6 grid gap-4 md:grid-cols-2"
           onSubmit={async (event) => {
             event.preventDefault()
@@ -45,11 +46,11 @@ export default function ProfileSettingsPage() {
                   activityLevel: formData.get('activityLevel') || null,
                   goal: formData.get('goal') || null,
                   preferences: formData.get('preferences') || null,
-                  preferredAIProvider: formData.get('preferredAIProvider') || null,
+                  preferredModelConnectorId: toNullableString(formData.get('preferredModelConnectorId')),
                 }),
               })
               await getCurrentUser()
-              await query.refetch()
+              await Promise.all([profileQuery.refetch(), connectorQuery.refetch()])
             } finally {
               setSaving(false)
             }
@@ -64,16 +65,30 @@ export default function ProfileSettingsPage() {
           <Field name="activityLevel" label="Activity level" defaultValue={profile?.activityLevel ?? ''} />
           <Field name="goal" label="Goal" defaultValue={profile?.goal ?? ''} />
           <SelectField
-            name="preferredAIProvider"
-            label="AI provider"
-            defaultValue={profile?.preferredAIProvider ?? ''}
-            options={AI_PROVIDER_OPTIONS}
+            name="preferredModelConnectorId"
+            label="Preferred model"
+            defaultValue={profile?.preferredModelConnectorId ?? ''}
+            options={connectors.map((connector) => ({
+              value: connector.id,
+              label: connector.isDefault ? `${connector.displayName} (Tenant default)` : connector.displayName,
+            }))}
           />
           <label className="md:col-span-2">
             <span className="mb-2 block text-xs uppercase tracking-[0.3em] text-slate-400">Preferences</span>
-            <textarea name="preferences" defaultValue={profile?.preferences ?? ''} rows={4} className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-300" />
+            <textarea
+              name="preferences"
+              defaultValue={profile?.preferences ?? ''}
+              rows={4}
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-300"
+            />
           </label>
-          <button disabled={saving} className="md:col-span-2 mt-2 rounded-full bg-cyan-300 px-5 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-slate-950">
+          <div className="md:col-span-2 rounded-[24px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-400">
+            {loading ? 'Loading available tenant models...' : 'Choose a tenant-approved model connector or leave this empty to follow the tenant default.'}
+          </div>
+          <button
+            disabled={saving || loading}
+            className="md:col-span-2 mt-2 rounded-full bg-cyan-300 px-5 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-slate-950 disabled:opacity-60"
+          >
             {saving ? 'Saving...' : 'Save profile'}
           </button>
         </form>
@@ -110,7 +125,7 @@ function SelectField({
         defaultValue={defaultValue}
         className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-300"
       >
-        <option value="">Use default</option>
+        <option value="">Use tenant default</option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
@@ -125,4 +140,10 @@ function toNullableNumber(value: FormDataEntryValue | null) {
   if (!value) return null
   const num = Number(value)
   return Number.isFinite(num) ? num : null
+}
+
+function toNullableString(value: FormDataEntryValue | null) {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : null
 }

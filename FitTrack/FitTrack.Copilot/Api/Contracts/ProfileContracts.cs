@@ -12,7 +12,7 @@ public record UserProfileDto(
     string? ActivityLevel,
     string? Goal,
     string? Preferences,
-    string? PreferredAIProvider,
+    string? PreferredModelConnectorId,
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
@@ -26,4 +26,4 @@ public record UpsertUserProfileRequest(
     string? ActivityLevel,
     string? Goal,
     string? Preferences,
-    string? PreferredAIProvider);
+    string? PreferredModelConnectorId);

@@ -14,24 +14,28 @@ public class ProfileService : IProfileService
 
     public async Task<UserProfile> GetOrCreateProfileAsync(string userId, string? email = null, CancellationToken ct = default)
     {
-        var profile = await _dbContext.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId, ct);
+        var user = await _dbContext.Users.FirstOrDefaultAsync(item => item.Id == userId, ct);
+        if (user is null)
+        {
+            throw new InvalidOperationException($"User '{userId}' was not found.");
+        }
+
+        if (string.IsNullOrWhiteSpace(user.TenantId))
+        {
+            user.TenantId = TenantConstants.DefaultTenantId;
+            await _dbContext.SaveChangesAsync(ct);
+        }
+
+        var profile = await _dbContext.UserProfiles.FirstOrDefaultAsync(item => item.UserId == userId, ct);
         if (profile is not null)
         {
-            if (string.IsNullOrWhiteSpace(profile.PreferredAIProvider))
-            {
-                profile.PreferredAIProvider = AIProviderNames.Xiaomi;
-                profile.UpdatedAt = DateTime.UtcNow;
-                await _dbContext.SaveChangesAsync(ct);
-            }
-
             return profile;
         }
 
         profile = new UserProfile
         {
             UserId = userId,
-            DisplayName = email,
-            PreferredAIProvider = AIProviderNames.Xiaomi
+            DisplayName = email
         };
 
         _dbContext.UserProfiles.Add(profile);

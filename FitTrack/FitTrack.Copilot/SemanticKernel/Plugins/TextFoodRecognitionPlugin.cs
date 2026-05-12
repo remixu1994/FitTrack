@@ -1,5 +1,6 @@
 using FitTrack.Copilot.Models;
 using FitTrack.Copilot.AI.Tooling;
+using FitTrack.Copilot.Service;
 using Microsoft.Extensions.AI;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using ChatResponseFormat = Microsoft.Extensions.AI.ChatResponseFormat;
@@ -9,15 +10,23 @@ namespace FitTrack.Copilot.AI.Plugins;
 /// <summary>
 /// Extracts structured food items from natural language meal descriptions.
 /// </summary>
-public sealed class TextFoodRecognitionPlugin(IChatClient chatClient)
+public sealed class TextFoodRecognitionPlugin
 {
-    public async Task<List<FoodItem>> RecognizeFoodFromTextAsync(string text, CancellationToken ct)
+    private readonly IAIChatClientFactory _chatClientFactory;
+
+    public TextFoodRecognitionPlugin(IAIChatClientFactory chatClientFactory)
+    {
+        _chatClientFactory = chatClientFactory;
+    }
+
+    public async Task<List<FoodItem>> RecognizeFoodFromTextAsync(string userId, string text, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
-            return new List<FoodItem>();
+            return [];
         }
 
+        var chatClient = await _chatClientFactory.CreateAsync(userId, ct);
         var messages = new List<ChatMessage>
         {
             new(ChatRole.System,
@@ -45,6 +54,6 @@ public sealed class TextFoodRecognitionPlugin(IChatClient chatClient)
 
         var response = await chatClient.GetResponseAsync(messages, options, ct);
         var items = response.Text.Deserialize<List<FoodItem>>();
-        return items?.Where(x => !string.IsNullOrWhiteSpace(x.Name)).ToList() ?? new List<FoodItem>();
+        return items?.Where(x => !string.IsNullOrWhiteSpace(x.Name)).ToList() ?? [];
     }
 }

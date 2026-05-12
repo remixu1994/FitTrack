@@ -1,13 +1,14 @@
 using System.Text.Json;
 using FitTrack.Copilot.Api.Contracts;
 using FitTrack.Copilot.Data;
+using FitTrack.Copilot.Service;
 
 namespace FitTrack.Copilot.Api;
 
 internal static class Mappers
 {
-    public static AuthenticatedUserDto ToDto(this ApplicationUser user, UserProfile? profile = null)
-        => new(user.Id, user.Email ?? string.Empty, profile?.DisplayName ?? user.Profile?.DisplayName ?? user.UserName ?? user.Email);
+    public static AuthenticatedUserDto ToDto(this ApplicationUser user, IEnumerable<string> roles, UserProfile? profile = null)
+        => new(user.Id, user.Email ?? string.Empty, profile?.DisplayName ?? user.Profile?.DisplayName ?? user.UserName ?? user.Email, roles.ToArray());
 
     public static UserProfileDto ToDto(this UserProfile profile)
         => new(
@@ -22,9 +23,50 @@ internal static class Mappers
             profile.ActivityLevel,
             profile.Goal,
             profile.Preferences,
-            profile.PreferredAIProvider,
+            profile.PreferredModelConnectorId,
             profile.CreatedAt,
             profile.UpdatedAt);
+
+    public static TenantSummaryDto ToDto(this Tenant tenant)
+        => new(
+            tenant.Id,
+            tenant.Name,
+            tenant.Slug,
+            tenant.IsSystemDefault,
+            tenant.Users.Count,
+            tenant.ModelConnectors.Count);
+
+    public static TenantModelConnectorPresetDto ToDto(this TenantModelConnectorPreset preset)
+        => new(
+            preset.Key,
+            preset.DisplayName,
+            preset.Protocol.ToString(),
+            preset.BaseUrl,
+            preset.ModelId);
+
+    public static TenantModelConnectorAdminDto ToAdminDto(this TenantModelConnector connector)
+        => new(
+            connector.Id,
+            connector.TenantId,
+            connector.DisplayName,
+            connector.ProviderPreset,
+            connector.Protocol.ToString(),
+            connector.BaseUrl,
+            connector.ModelId,
+            connector.IsDefault,
+            connector.IsEnabled,
+            !string.IsNullOrWhiteSpace(connector.EncryptedApiKey),
+            connector.CreatedAt,
+            connector.UpdatedAt);
+
+    public static TenantModelConnectorOptionDto ToOptionDto(this TenantModelConnector connector)
+        => new(
+            connector.Id,
+            connector.DisplayName,
+            connector.ProviderPreset,
+            connector.Protocol.ToString(),
+            connector.ModelId,
+            connector.IsDefault);
 
     public static ConversationThreadDto ToDto(this ConversationThread thread)
         => new(thread.Id, thread.Title, thread.CreatedAt, thread.UpdatedAt, thread.ArchivedAt);

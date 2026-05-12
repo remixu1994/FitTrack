@@ -1,12 +1,15 @@
 import { expect, test } from '@playwright/test'
 
 import {
+  adminUser,
   createClientErrorCollector,
   expectNoHydrationErrors,
+  mockAdminModelConnectorEndpoints,
   mockChatWorkspace,
   mockCoreSession,
   mockFoodRecords,
   mockLogin,
+  mockModelConnectorEndpoints,
   mockProfilePage,
   mockProgressPage,
   mockWorkoutPages,
@@ -64,6 +67,7 @@ test('authenticated pages render mocked data', async ({ page }) => {
   await mockWorkoutPages(page)
   await mockProgressPage(page)
   await mockProfilePage(page)
+  await mockModelConnectorEndpoints(page)
 
   await page.goto('/food-records')
   await expect(page.getByRole('heading', { name: 'Food Records' })).toBeVisible()
@@ -81,6 +85,27 @@ test('authenticated pages render mocked data', async ({ page }) => {
   await page.getByRole('link', { name: 'Profile' }).click()
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible()
   await expect(page.getByLabel('Display name')).toHaveValue('Demo Athlete')
+  await expect(page.getByLabel('Preferred model')).toHaveValue('connector-default-azure-openai')
+
+  await expectNoHydrationErrors(errors)
+})
+
+test('admin can open the tenant model connector settings page', async ({ page }) => {
+  const errors = createClientErrorCollector(page)
+
+  await seedAuthenticatedSession(page, adminUser)
+  await mockCoreSession(page, adminUser)
+  await mockProfilePage(page, adminUser)
+  await mockModelConnectorEndpoints(page)
+  await mockAdminModelConnectorEndpoints(page)
+
+  await page.goto('/settings/models')
+
+  await expect(page.getByRole('heading', { name: 'Models' })).toBeVisible()
+  await expect(page.getByText('Default Tenant')).toBeVisible()
+  await expect(page.getByLabel('Display name')).toHaveValue('Azure OpenAI')
+  await expect(page.getByLabel('Protocol')).toHaveValue('AzureOpenAI')
+  await expect(page.getByRole('button', { name: 'Update connector' })).toBeVisible()
 
   await expectNoHydrationErrors(errors)
 })

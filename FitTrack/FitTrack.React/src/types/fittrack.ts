@@ -14,6 +14,7 @@ export type AuthenticatedUser = {
   id: string
   email: string
   displayName?: string | null
+  roles: string[]
 }
 
 export type AuthResponse = {
@@ -91,7 +92,50 @@ export type UserProfile = {
   activityLevel?: string | null
   goal?: string | null
   preferences?: string | null
-  preferredAIProvider?: string | null
+  preferredModelConnectorId?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type TenantModelProtocol = 'OpenAICompatible' | 'AzureOpenAI' | 'Anthropic'
+
+export type TenantSummary = {
+  id: string
+  name: string
+  slug: string
+  isSystemDefault: boolean
+  userCount: number
+  connectorCount: number
+}
+
+export type TenantModelConnectorPreset = {
+  key: string
+  displayName: string
+  protocol: TenantModelProtocol
+  baseUrl: string
+  modelId: string
+}
+
+export type TenantModelConnectorOption = {
+  id: string
+  displayName: string
+  providerPreset: string
+  protocol: TenantModelProtocol
+  modelId: string
+  isDefault: boolean
+}
+
+export type TenantModelConnectorAdmin = {
+  id: string
+  tenantId: string
+  displayName: string
+  providerPreset: string
+  protocol: TenantModelProtocol
+  baseUrl: string
+  modelId: string
+  isDefault: boolean
+  isEnabled: boolean
+  hasApiKey: boolean
   createdAt: string
   updatedAt: string
 }

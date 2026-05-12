@@ -388,7 +388,7 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
             <div className="flex flex-wrap gap-2 text-xs uppercase tracking-[0.25em] text-slate-300">
               <MetricPill label="Messages" value={String(threadDetail?.messages.length ?? 0)} />
               <MetricPill label="Snapshots" value={String(threadDetail?.snapshots.length ?? 0)} />
-              <MetricPill label="Model" value={profile?.preferredAIProvider ?? 'Default'} />
+              <MetricPill label="Model" value={profile?.preferredModelConnectorId ? 'Custom model' : 'Tenant default'} />
             </div>
           </div>
         </header>
@@ -853,7 +853,7 @@ function buildWelcomeCopy(profile: UserProfile | null) {
     chips: [
       goal ? `Goal ${goal}` : 'Goal ready',
       activityLevel ? `Activity ${activityLevel}` : 'Activity baseline',
-      profile?.preferredAIProvider ? `Model ${profile.preferredAIProvider}` : 'Default model',
+      profile?.preferredModelConnectorId ? 'Custom model selected' : 'Tenant default model',
     ],
   }
 }

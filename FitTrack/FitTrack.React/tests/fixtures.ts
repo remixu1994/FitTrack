@@ -4,12 +4,21 @@ type AuthenticatedUser = {
   id: string
   email: string
   displayName: string
+  roles: string[]
 }
 
 const defaultUser: AuthenticatedUser = {
   id: 'user-1',
   email: 'demo@fittrack.local',
   displayName: 'Demo Athlete',
+  roles: [],
+}
+
+export const adminUser: AuthenticatedUser = {
+  id: 'admin-1',
+  email: 'admin@fittrack.local',
+  displayName: 'Admin Coach',
+  roles: ['Admin'],
 }
 
 const frontendOrigin = 'http://localhost:3000'
@@ -225,7 +234,7 @@ export async function mockProfilePage(page: Page, user: AuthenticatedUser = defa
     activityLevel: 'Moderate',
     goal: 'Recomposition',
     preferences: 'Prefer concise plans.',
-    preferredAIProvider: 'AzureOpenAI',
+    preferredModelConnectorId: 'connector-default-azure-openai',
     createdAt: '2026-05-01T09:00:00.000Z',
     updatedAt: '2026-05-01T09:00:00.000Z',
   }
@@ -241,5 +250,152 @@ export async function mockProfilePage(page: Page, user: AuthenticatedUser = defa
     }
 
     await fulfillJson(route, ok(profile))
+  })
+}
+
+export async function mockModelConnectorEndpoints(page: Page) {
+  const connectors = [
+    {
+      id: 'connector-default-azure-openai',
+      displayName: 'Azure OpenAI',
+      providerPreset: 'azure-openai',
+      protocol: 'AzureOpenAI',
+      modelId: 'gpt-4.1',
+      isDefault: true,
+    },
+    {
+      id: 'connector-default-openai-codex',
+      displayName: 'OpenAI Codex',
+      providerPreset: 'openai-codex',
+      protocol: 'OpenAICompatible',
+      modelId: 'gpt-5-codex',
+      isDefault: false,
+    },
+  ]
+
+  await page.route('**/api/model-connectors', async (route) => {
+    await fulfillJson(route, ok(connectors))
+  })
+}
+
+export async function mockAdminModelConnectorEndpoints(page: Page) {
+  const tenants = [
+    {
+      id: 'tenant-default',
+      name: 'Default Tenant',
+      slug: 'default',
+      isSystemDefault: true,
+      userCount: 2,
+      connectorCount: 2,
+    },
+  ]
+
+  const presets = [
+    {
+      key: 'azure-openai',
+      displayName: 'Azure OpenAI',
+      protocol: 'AzureOpenAI',
+      baseUrl: 'https://example.openai.azure.com/',
+      modelId: 'gpt-4.1',
+    },
+    {
+      key: 'openai-codex',
+      displayName: 'OpenAI/Codex',
+      protocol: 'OpenAICompatible',
+      baseUrl: 'https://api.openai.com/v1/',
+      modelId: 'gpt-5-codex',
+    },
+  ]
+
+  let connectors = [
+    {
+      id: 'connector-default-azure-openai',
+      tenantId: 'tenant-default',
+      displayName: 'Azure OpenAI',
+      providerPreset: 'azure-openai',
+      protocol: 'AzureOpenAI',
+      baseUrl: 'https://example.openai.azure.com/',
+      modelId: 'gpt-4.1',
+      isDefault: true,
+      isEnabled: true,
+      hasApiKey: true,
+      createdAt: '2026-05-01T09:00:00.000Z',
+      updatedAt: '2026-05-01T09:00:00.000Z',
+    },
+  ]
+
+  await page.route('**/api/admin/tenants', async (route) => {
+    await fulfillJson(route, ok(tenants))
+  })
+
+  await page.route('**/api/admin/model-connector-presets', async (route) => {
+    await fulfillJson(route, ok(presets))
+  })
+
+  await page.route('**/api/admin/tenants/tenant-default/model-connectors', async (route) => {
+    const method = route.request().method()
+    if (method === 'POST') {
+      const payload = route.request().postDataJSON() as Record<string, unknown>
+      const created = {
+        id: 'connector-new',
+        tenantId: 'tenant-default',
+        displayName: String(payload.displayName ?? 'New connector'),
+        providerPreset: String(payload.providerPreset ?? 'azure-openai'),
+        protocol: String(payload.protocol ?? 'AzureOpenAI'),
+        baseUrl: String(payload.baseUrl ?? ''),
+        modelId: String(payload.modelId ?? ''),
+        isDefault: Boolean(payload.isDefault),
+        isEnabled: Boolean(payload.isEnabled),
+        hasApiKey: Boolean(payload.apiKey),
+        createdAt: '2026-05-01T09:00:00.000Z',
+        updatedAt: '2026-05-01T09:00:00.000Z',
+      }
+      connectors = [created, ...connectors.map((item) => ({ ...item, isDefault: created.isDefault ? false : item.isDefault }))]
+      await fulfillJson(route, ok(created))
+      return
+    }
+
+    await fulfillJson(route, ok(connectors))
+  })
+
+  await page.route('**/api/admin/tenants/tenant-default/model-connectors/connector-default-azure-openai/default', async (route) => {
+    connectors = connectors.map((item) => ({ ...item, isDefault: item.id === 'connector-default-azure-openai' }))
+    await fulfillJson(route, ok(connectors[0]))
+  })
+
+  await page.route('**/api/admin/tenants/tenant-default/model-connectors/connector-default-azure-openai', async (route) => {
+    const method = route.request().method()
+    if (method === 'PUT') {
+      const payload = route.request().postDataJSON() as Record<string, unknown>
+      connectors = connectors.map((item) =>
+        item.id === 'connector-default-azure-openai'
+          ? {
+              ...item,
+              displayName: String(payload.displayName ?? item.displayName),
+              providerPreset: String(payload.providerPreset ?? item.providerPreset),
+              protocol: String(payload.protocol ?? item.protocol),
+              baseUrl: String(payload.baseUrl ?? item.baseUrl),
+              modelId: String(payload.modelId ?? item.modelId),
+              isDefault: Boolean(payload.isDefault),
+              isEnabled: Boolean(payload.isEnabled),
+              hasApiKey: item.hasApiKey || Boolean(payload.apiKey),
+              updatedAt: '2026-05-02T09:00:00.000Z',
+            }
+          : {
+              ...item,
+              isDefault: Boolean(payload.isDefault) ? false : item.isDefault,
+            },
+      )
+      await fulfillJson(route, ok(connectors.find((item) => item.id === 'connector-default-azure-openai')))
+      return
+    }
+
+    if (method === 'DELETE') {
+      connectors = connectors.filter((item) => item.id !== 'connector-default-azure-openai')
+      await fulfillJson(route, ok({ deleted: true }))
+      return
+    }
+
+    await fulfillJson(route, ok(connectors.find((item) => item.id === 'connector-default-azure-openai')))
   })
 }

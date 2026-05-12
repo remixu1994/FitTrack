@@ -33,8 +33,7 @@ public class UserProfile
     [MaxLength(1024)]
     public string? Preferences { get; set; }
 
-    [MaxLength(32)]
-    public string? PreferredAIProvider { get; set; }  // "AzureOpenAI" | "MiniMax" | "Xiaomi"
+    public string? PreferredModelConnectorId { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

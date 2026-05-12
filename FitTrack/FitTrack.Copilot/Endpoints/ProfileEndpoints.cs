@@ -16,21 +16,23 @@ public static class ProfileEndpoints
             return Results.Ok(new ApiResponse<UserProfileDto>(true, profile.ToDto()));
         });
 
-        group.MapPut("/", async (HttpContext httpContext, UpsertUserProfileRequest request, IProfileService profileService, CancellationToken ct) =>
+        group.MapPut("/", async (HttpContext httpContext, UpsertUserProfileRequest request, IProfileService profileService, ITenantModelConnectorService connectorService, CancellationToken ct) =>
         {
-            if (!TryNormalizeProvider(request.PreferredAIProvider, out var preferredAiProvider))
+            var userId = httpContext.User.GetRequiredUserId();
+            if (!string.IsNullOrWhiteSpace(request.PreferredModelConnectorId) &&
+                !await connectorService.CanUseConnectorAsync(userId, request.PreferredModelConnectorId, ct))
             {
                 return Results.Json(
                     new ApiResponse<object>(
                         false,
                         Error: new ApiError(
-                            "INVALID_AI_PROVIDER",
-                            $"Unsupported AI provider '{request.PreferredAIProvider}'. Supported values: {string.Join(", ", AIProviderNames.UserSelectable)}.")),
+                            "INVALID_MODEL_CONNECTOR",
+                            $"The connector '{request.PreferredModelConnectorId}' is not available for the current tenant.")),
                     statusCode: StatusCodes.Status400BadRequest);
             }
 
             var profile = await profileService.UpdateAsync(
-                httpContext.User.GetRequiredUserId(),
+                userId,
                 entity =>
                 {
                     entity.DisplayName = request.DisplayName;
@@ -42,7 +44,9 @@ public static class ProfileEndpoints
                     entity.ActivityLevel = request.ActivityLevel;
                     entity.Goal = request.Goal;
                     entity.Preferences = request.Preferences;
-                    entity.PreferredAIProvider = preferredAiProvider;
+                    entity.PreferredModelConnectorId = string.IsNullOrWhiteSpace(request.PreferredModelConnectorId)
+                        ? null
+                        : request.PreferredModelConnectorId.Trim();
                 },
                 httpContext.User.GetEmail(),
                 ct);
@@ -51,19 +55,5 @@ public static class ProfileEndpoints
         });
 
         return app;
-    }
-
-    private static bool TryNormalizeProvider(string? provider, out string? normalizedProvider)
-    {
-        if (string.IsNullOrWhiteSpace(provider))
-        {
-            normalizedProvider = null;
-            return true;
-        }
-
-        normalizedProvider = AIProviderNames.UserSelectable.FirstOrDefault(
-            item => string.Equals(item, provider.Trim(), StringComparison.OrdinalIgnoreCase));
-
-        return normalizedProvider is not null;
     }
 }

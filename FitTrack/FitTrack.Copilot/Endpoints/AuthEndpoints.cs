@@ -30,15 +30,17 @@ public static class AuthEndpoints
             }
 
             var profile = await profileService.GetOrCreateProfileAsync(user.Id, user.Email, ct);
+            var roles = await userManager.GetRolesAsync(user);
             var tokens = await tokenService.IssueAsync(user, ct);
             WriteRefreshCookie(httpContext, jwtOptions.Value, tokens.RefreshToken);
-            return Results.Ok(new ApiResponse<AuthResponse>(true, new AuthResponse(tokens.AccessToken, tokens.ExpiresAtUtc, user.ToDto(profile))));
+            return Results.Ok(new ApiResponse<AuthResponse>(true, new AuthResponse(tokens.AccessToken, tokens.ExpiresAtUtc, user.ToDto(roles, profile))));
         });
 
         group.MapPost("/refresh", async (
             HttpContext httpContext,
             IAuthTokenService tokenService,
             IProfileService profileService,
+            UserManager<ApplicationUser> userManager,
             IOptions<JwtOptions> jwtOptions,
             CancellationToken ct) =>
         {
@@ -54,8 +56,9 @@ public static class AuthEndpoints
             }
 
             var profile = await profileService.GetOrCreateProfileAsync(result.Value.User.Id, result.Value.User.Email, ct);
+            var roles = await userManager.GetRolesAsync(result.Value.User);
             WriteRefreshCookie(httpContext, jwtOptions.Value, result.Value.RefreshToken);
-            return Results.Ok(new ApiResponse<AuthResponse>(true, new AuthResponse(result.Value.AccessToken, result.Value.ExpiresAtUtc, result.Value.User.ToDto(profile))));
+            return Results.Ok(new ApiResponse<AuthResponse>(true, new AuthResponse(result.Value.AccessToken, result.Value.ExpiresAtUtc, result.Value.User.ToDto(roles, profile))));
         });
 
         group.MapPost("/logout", async (
@@ -79,7 +82,6 @@ public static class AuthEndpoints
             IProfileService profileService,
             CancellationToken ct) =>
         {
-            // RequireAuthorization() ensures the user is authenticated via Bearer JWT
             var userId = httpContext.User.GetRequiredUserId();
             var user = await userManager.FindByIdAsync(userId);
             if (user is null)
@@ -88,7 +90,8 @@ public static class AuthEndpoints
             }
 
             var profile = await profileService.GetOrCreateProfileAsync(userId, user.Email, ct);
-            return Results.Ok(new ApiResponse<AuthenticatedUserDto>(true, user.ToDto(profile)));
+            var roles = await userManager.GetRolesAsync(user);
+            return Results.Ok(new ApiResponse<AuthenticatedUserDto>(true, user.ToDto(roles, profile)));
         }).RequireAuthorization();
 
         return app;

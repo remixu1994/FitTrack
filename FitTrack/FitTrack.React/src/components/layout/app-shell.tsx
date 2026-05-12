@@ -8,7 +8,7 @@ import { authStorage, FITTRACK_USER_CHANGED_EVENT } from '@/lib/auth'
 import { getCurrentUser, logout, refreshSession } from '@/lib/http'
 import type { AuthenticatedUser } from '@/types/fittrack'
 
-const navItems = [
+const baseNavItems = [
   { href: '/today', label: 'Today' },
   { href: '/chat', label: 'Coach' },
   { href: '/food-records', label: 'Food' },
@@ -29,6 +29,9 @@ export function AppShell({ title, children, hideHeader = false, immersive = fals
   const router = useRouter()
   const [user, setUser] = useState<AuthenticatedUser | null>(null)
   const [ready, setReady] = useState(false)
+  const navItems = user?.roles.includes('Admin')
+    ? [...baseNavItems, { href: '/settings/models', label: 'Models' }]
+    : baseNavItems
 
   useEffect(() => {
     setUser(authStorage.getUser())
@@ -55,6 +58,7 @@ export function AppShell({ title, children, hideHeader = false, immersive = fals
       try {
         const currentUser = await getCurrentUser()
         if (!cancelled) {
+          setUser(currentUser)
           setReady(true)
         }
       } catch {

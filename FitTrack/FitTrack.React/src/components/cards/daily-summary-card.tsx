@@ -1,3 +1,5 @@
+import { useLanguage } from '@/components/providers/language-provider'
+
 export type SummaryMetric = {
   label: string
   value: string
@@ -21,6 +23,8 @@ export const DAILY_SUMMARY_FALLBACK: DailySummaryCardContent = {
 }
 
 export function DailySummaryCard({ content }: { content?: DailySummaryCardContent | null }) {
+  const { language } = useLanguage()
+  const isChinese = language === 'zh-CN'
   const data = content ?? DAILY_SUMMARY_FALLBACK
 
   const metrics = [data.readiness, data.weight, data.sleep].filter(Boolean) as SummaryMetric[]
@@ -29,7 +33,7 @@ export function DailySummaryCard({ content }: { content?: DailySummaryCardConten
 
   return (
     <div className="w-full rounded-3xl border border-amber-300/40 bg-gradient-to-br from-amber-400/15 to-orange-900/10 p-5 text-left shadow-lg shadow-amber-500/30">
-      <p className="text-xs uppercase tracking-[0.35em] text-amber-200">Daily Summary</p>
+      <p className="text-xs uppercase tracking-[0.35em] text-amber-200">{isChinese ? '每日摘要' : 'Daily Summary'}</p>
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         {metrics.map((metric) => (
           <div key={metric.label} className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2">

@@ -1,3 +1,5 @@
+import { useLanguage } from '@/components/providers/language-provider'
+
 export type MealAnalysisCardContent = {
   meal?: string
   macroBreakdown?: Array<string | { label: string; value: string }>
@@ -17,6 +19,8 @@ export const MEAL_ANALYSIS_FALLBACK: MealAnalysisCardContent = {
 }
 
 export function MealAnalysisCard({ content }: { content?: MealAnalysisCardContent | null }) {
+  const { language } = useLanguage()
+  const isChinese = language === 'zh-CN'
   const data = content ?? MEAL_ANALYSIS_FALLBACK
   const macroLines = (data.macroBreakdown?.length ? data.macroBreakdown : MEAL_ANALYSIS_FALLBACK.macroBreakdown) ?? []
   const notes = data.notes?.length ? data.notes : MEAL_ANALYSIS_FALLBACK.notes ?? []
@@ -25,12 +29,12 @@ export function MealAnalysisCard({ content }: { content?: MealAnalysisCardConten
     <div className="w-full rounded-3xl border border-indigo-400/40 bg-gradient-to-br from-indigo-500/10 to-cyan-800/10 p-5 text-left shadow-lg shadow-indigo-500/20">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.35em] text-indigo-200">Meal Analysis</p>
+          <p className="text-xs uppercase tracking-[0.35em] text-indigo-200">{isChinese ? '餐食分析' : 'Meal Analysis'}</p>
           {data.meal && <p className="mt-2 text-base font-semibold text-white">{data.meal}</p>}
         </div>
         {data.score && (
           <div className="rounded-2xl border border-white/10 bg-white/10 px-3 py-1 text-center">
-            <p className="text-[10px] uppercase tracking-[0.35em] text-slate-300">Score</p>
+            <p className="text-[10px] uppercase tracking-[0.35em] text-slate-300">{isChinese ? '评分' : 'Score'}</p>
             <p className="text-lg font-semibold text-white">{data.score}</p>
           </div>
         )}

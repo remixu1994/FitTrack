@@ -14,15 +14,15 @@ export default function TodayPage() {
   const { language, locale } = useLanguage()
   const isChinese = language === 'zh-CN'
   const progress = useQuery({
-    queryKey: ['progress-summary'],
+    queryKey: ['progress-summary', language],
     queryFn: () => apiFetch<ProgressSummary>('/api/progress/summary'),
   })
   const foodRecords = useQuery({
-    queryKey: ['food-records'],
+    queryKey: ['food-records', language],
     queryFn: () => apiFetch<FoodRecord[]>('/api/food-records'),
   })
   const workoutSessions = useQuery({
-    queryKey: ['workout-sessions'],
+    queryKey: ['workout-sessions', language],
     queryFn: () => apiFetch<WorkoutSession[]>('/api/workout-sessions'),
   })
 

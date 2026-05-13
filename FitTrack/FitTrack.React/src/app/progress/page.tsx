@@ -12,7 +12,7 @@ export default function ProgressPage() {
   const { language } = useLanguage()
   const isChinese = language === 'zh-CN'
   const query = useQuery({
-    queryKey: ['progress-summary'],
+    queryKey: ['progress-summary', language],
     queryFn: () => apiFetch<ProgressSummary>('/api/progress/summary'),
   })
 

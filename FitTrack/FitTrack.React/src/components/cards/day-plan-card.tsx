@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useLanguage } from '@/components/providers/language-provider'
 
 export type MacroTarget = {
   label: string
@@ -37,6 +38,8 @@ export type DayPlanCardProps = {
 }
 
 export function DayPlanCard({ content }: DayPlanCardProps) {
+  const { language } = useLanguage()
+  const isChinese = language === 'zh-CN'
   const data = content ?? DAY_PLAN_FALLBACK
   const macros = data.macros?.length ? data.macros : DAY_PLAN_FALLBACK.macros!
   const guidance = data.guidance?.length ? data.guidance : DAY_PLAN_FALLBACK.guidance!
@@ -45,7 +48,7 @@ export function DayPlanCard({ content }: DayPlanCardProps) {
     <div className="w-full rounded-3xl border border-emerald-400/30 bg-gradient-to-br from-emerald-400/10 to-teal-900/10 p-5 text-left shadow-lg shadow-emerald-500/20">
       <div className="flex items-center gap-2 text-xs uppercase tracking-[0.35em] text-emerald-200">
         <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
-        {data.day ?? 'Day plan'}
+        {data.day ?? (isChinese ? '日计划' : 'Day plan')}
       </div>
       {data.headline && <p className="mt-2 text-base font-semibold text-white">{data.headline}</p>}
       <div className="mt-4 grid grid-cols-2 gap-3">

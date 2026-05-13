@@ -11,11 +11,11 @@ export default function WorkoutsPage() {
   const { language, locale } = useLanguage()
   const isChinese = language === 'zh-CN'
   const plans = useQuery({
-    queryKey: ['workout-plans'],
+    queryKey: ['workout-plans', language],
     queryFn: () => apiFetch<WorkoutPlan[]>('/api/workout-plans'),
   })
   const sessions = useQuery({
-    queryKey: ['workout-sessions'],
+    queryKey: ['workout-sessions', language],
     queryFn: () => apiFetch<WorkoutSession[]>('/api/workout-sessions'),
   })
 

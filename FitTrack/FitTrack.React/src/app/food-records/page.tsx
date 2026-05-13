@@ -11,7 +11,7 @@ export default function FoodRecordsPage() {
   const { language, locale } = useLanguage()
   const isChinese = language === 'zh-CN'
   const query = useQuery({
-    queryKey: ['food-records'],
+    queryKey: ['food-records', language],
     queryFn: () => apiFetch<FoodRecord[]>('/api/food-records'),
   })
 

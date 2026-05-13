@@ -52,10 +52,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Core\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <Compile Update="Components\Pages\Chat.razor.css">
         <DependentUpon>Chat.razor</DependentUpon>
       </Compile>

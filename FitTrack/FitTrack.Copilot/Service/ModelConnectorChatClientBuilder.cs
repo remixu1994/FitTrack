@@ -1,3 +1,5 @@
+using System.ClientModel;
+using System.ClientModel.Primitives;
 using Anthropic;
 using Azure;
 using Azure.AI.OpenAI;
@@ -6,7 +8,6 @@ using FitTrack.Copilot.Middleware;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Caching.Memory;
 using OpenAI;
-using System.ClientModel;
 
 namespace FitTrack.Copilot.Service;
 
@@ -70,15 +71,26 @@ public sealed class ModelConnectorChatClientBuilder : IModelConnectorChatClientB
         return client;
     }
 
-    private static IChatClient BuildOpenAiCompatible(TenantModelConnector connector, string apiKey)
-        => new OpenAIClient(
+    private IChatClient BuildOpenAiCompatible(TenantModelConnector connector, string apiKey)
+    {
+        HttpMessageHandler httpHandler = new HttpClientHandler();
+
+        if (connector.ProviderPreset == TenantModelConnectorPresetCatalog.XiaomiMimo)
+        {
+            var handlerLogger = _serviceProvider.GetService<ILogger<MimoReasoningPreservingHandler>>();
+            httpHandler = new MimoReasoningPreservingHandler(handlerLogger) { InnerHandler = httpHandler };
+        }
+
+        return new OpenAIClient(
                 new ApiKeyCredential(apiKey),
                 new OpenAIClientOptions
                 {
-                    Endpoint = new Uri(connector.BaseUrl)
+                    Endpoint = new Uri(connector.BaseUrl),
+                    Transport = new HttpClientPipelineTransport(new HttpClient(httpHandler))
                 })
             .GetChatClient(connector.ModelId)
             .AsIChatClient();
+    }
 
     private static IChatClient BuildAzureOpenAi(TenantModelConnector connector, string apiKey)
         => new AzureOpenAIClient(new Uri(connector.BaseUrl), new AzureKeyCredential(apiKey))

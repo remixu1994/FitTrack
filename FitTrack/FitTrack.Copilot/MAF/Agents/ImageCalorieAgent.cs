@@ -4,6 +4,7 @@ using FitTrack.Copilot.Abstractions;
 using FitTrack.Copilot.Abstractions.Models;
 using FitTrack.Copilot.Models;
 using FitTrack.Copilot.AI.Orchestrator;
+using FitTrack.Copilot.Service;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 
@@ -78,7 +79,8 @@ public sealed class ImageCalorieAgent
         var input = new VisionNutritionInput(
             Images: [FromDataUrl(imageDataUrl)],
             Hint: hint,
-            UserId: DefaultUserId);
+            UserId: DefaultUserId,
+            LanguageCode: AppLanguageSupport.English);
 
         var result = await _foodNutritionOrchestrator.ProcessVisionNutritionAsync(input, ct);
         return FormatNutritionResult(result);

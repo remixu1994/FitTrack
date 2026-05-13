@@ -21,7 +21,7 @@ public sealed class TextFoodRecognitionPlugin
         _requestContextAccessor = requestContextAccessor;
     }
 
-    public async Task<List<FoodItem>> RecognizeFoodFromTextAsync(string userId, string text, CancellationToken ct)
+    public async Task<List<FoodItem>> RecognizeFoodFromTextAsync(string userId, string text, string? languageCode, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -44,6 +44,7 @@ public sealed class TextFoodRecognitionPlugin
                 Use concise food names.
                 """
             ),
+            new(ChatRole.System, AppLanguageSupport.BuildReplyInstruction(languageCode)),
             new(ChatRole.User, text)
         };
 

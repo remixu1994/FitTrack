@@ -12,7 +12,7 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
   const initialDraft = typeof resolvedSearchParams.draft === 'string' ? resolvedSearchParams.draft : ''
 
   return (
-    <AppShell title="Fitness Coach" hideHeader immersive>
+    <AppShell title="Fitness Coach" titleKey="chat" hideHeader immersive>
       <ChatView initialDraft={initialDraft} />
     </AppShell>
   )

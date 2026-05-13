@@ -10,10 +10,10 @@ public interface IAgentSubAgent
 
     AIAgent Agent { get; }
 
-    Task<AgentExecutionResult> ExecuteAsync(string userId, IReadOnlyList<ConversationMessage> history, string prompt, CancellationToken ct = default);
+    Task<AgentExecutionResult> ExecuteAsync(string userId, IReadOnlyList<ConversationMessage> history, string prompt, string? languageCode, CancellationToken ct = default);
 }
 
 public interface IStreamingSubAgent : IAgentSubAgent
 {
-    IAsyncEnumerable<CoachStreamEvent> ExecuteStreamingAsync(string userId, IReadOnlyList<ConversationMessage> history, string prompt, CancellationToken ct = default);
+    IAsyncEnumerable<CoachStreamEvent> ExecuteStreamingAsync(string userId, IReadOnlyList<ConversationMessage> history, string prompt, string? languageCode, CancellationToken ct = default);
 }

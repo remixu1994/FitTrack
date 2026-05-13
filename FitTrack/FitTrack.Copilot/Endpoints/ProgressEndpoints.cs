@@ -10,7 +10,8 @@ public static class ProgressEndpoints
     {
         app.MapGet("/api/progress/summary", async (HttpContext httpContext, IProgressService progressService, CancellationToken ct) =>
         {
-            var summary = await progressService.GetSummaryAsync(httpContext.User.GetRequiredUserId(), ct);
+            var languageCode = AppLanguageSupport.Normalize(httpContext.Request.Headers[AppLanguageSupport.HeaderName].ToString());
+            var summary = await progressService.GetSummaryAsync(httpContext.User.GetRequiredUserId(), languageCode, ct);
             return Results.Ok(new ApiResponse<ProgressSummaryDto>(true, summary));
         }).WithTags("Progress").RequireAuthorization();
 

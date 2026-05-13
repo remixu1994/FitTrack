@@ -67,7 +67,8 @@ public record SendMessageRequest(
     string ThreadId,
     string? ContentText,
     Dictionary<string, object?>? ContentJson,
-    MealPhotoAttachmentDto? MealPhoto);
+    MealPhotoAttachmentDto? MealPhoto,
+    string? LanguageCode);
 
 public record AgentResponseEnvelope(
     string AgentName,

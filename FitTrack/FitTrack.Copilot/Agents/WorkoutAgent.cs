@@ -35,10 +35,10 @@ public class WorkoutAgent : IStreamingSubAgent
     }
 
     [Description("Answer training and workout questions")]
-    public async Task<AgentExecutionResult> ExecuteAsync(string userId, IReadOnlyList<ConversationMessage> history, string prompt, CancellationToken ct = default)
+    public async Task<AgentExecutionResult> ExecuteAsync(string userId, IReadOnlyList<ConversationMessage> history, string prompt, string? languageCode, CancellationToken ct = default)
     {
         AgentExecutionResult? result = null;
-        await foreach (var update in ExecuteStreamingAsync(userId, history, prompt, ct).WithCancellation(ct))
+        await foreach (var update in ExecuteStreamingAsync(userId, history, prompt, languageCode, ct).WithCancellation(ct))
         {
             if (update.Type == CoachStreamEventType.Completed)
             {
@@ -53,6 +53,7 @@ public class WorkoutAgent : IStreamingSubAgent
         string userId,
         IReadOnlyList<ConversationMessage> history,
         string prompt,
+        string? languageCode,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
         yield return CoachStreamEvent.ToolEvent("subagent:workout");
@@ -69,7 +70,7 @@ public class WorkoutAgent : IStreamingSubAgent
         await foreach (var update in _agent.RunStreamingAsync(
                            new[]
                            {
-                               new ChatMessage(ChatRole.User, BuildPrompt(history, prompt, userId))
+                               new ChatMessage(ChatRole.User, BuildPrompt(history, prompt, userId, languageCode))
                            },
                            cancellationToken: ct).WithCancellation(ct))
         {
@@ -113,10 +114,10 @@ public class WorkoutAgent : IStreamingSubAgent
     private Task<string> SummarizeWorkoutHistoryAsync(string prompt, CancellationToken ct)
         => _workoutTools.SummarizeWorkoutHistoryAsync(ExtractUserId(prompt), ct);
 
-    private static string BuildPrompt(IReadOnlyList<ConversationMessage> history, string prompt, string userId)
+    private static string BuildPrompt(IReadOnlyList<ConversationMessage> history, string prompt, string userId, string? languageCode)
     {
         var recent = string.Join('\n', history.TakeLast(6).Select(m => $"{m.Role}: {m.ContentText ?? m.ContentJson}"));
-        return $"UserId:{userId}\nRecent conversation:\n{recent}\n\nUser request:\n{prompt}";
+        return $"UserId:{userId}\nResponse language: {AppLanguageSupport.Normalize(languageCode)}\nInstruction: {AppLanguageSupport.BuildReplyInstruction(languageCode)}\nRecent conversation:\n{recent}\n\nUser request:\n{prompt}";
     }
 
     private static string ExtractUserId(string prompt)

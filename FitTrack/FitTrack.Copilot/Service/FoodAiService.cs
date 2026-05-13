@@ -36,7 +36,8 @@ public class FoodAiService : IFoodAiService
         var input = new VisionNutritionInput(
             Images: files,
             Hint: req.Text,
-            UserId: req.UserId ?? "user" // In a real app, get from AuthenticationState
+            UserId: req.UserId ?? "user", // In a real app, get from AuthenticationState
+            LanguageCode: req.LanguageCode
         );
 
         return await _orchestrator.ProcessVisionNutritionAsync(input, ct);

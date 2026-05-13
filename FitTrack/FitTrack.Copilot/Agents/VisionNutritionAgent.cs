@@ -10,9 +10,9 @@ public class VisionNutritionAgent
         _visionTools = visionTools;
     }
 
-    public async Task<AgentExecutionResult> RunAsync(string userId, string? text, string imageDataUrl, CancellationToken ct = default)
+    public async Task<AgentExecutionResult> RunAsync(string userId, string? text, string imageDataUrl, string? languageCode, CancellationToken ct = default)
     {
-        var result = await _visionTools.AnalyzeImageAsync(userId, text, imageDataUrl, ct);
+        var result = await _visionTools.AnalyzeImageAsync(userId, text, imageDataUrl, languageCode, ct);
         return new AgentExecutionResult(
             "VisionNutritionAgent",
             result.Summary,

@@ -47,8 +47,6 @@ public static class CopilotServiceCollectionExtensions
         services.AddScoped<IProgressTools, ProgressTools>();
         services.AddScoped<IVisionTools, VisionTools>();
 
-        services.AddScoped<NutritionAgent>();
-        services.AddScoped<WorkoutAgent>();
         services.AddScoped<VisionNutritionAgent>();
         services.AddScoped<ProgressCheckInAgent>();
         services.AddScoped<CoachSupervisorAgent>();

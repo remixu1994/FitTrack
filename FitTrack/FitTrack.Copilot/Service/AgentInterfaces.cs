@@ -7,7 +7,7 @@ public interface INutritionTools
 {
     Task<string> SearchUsdaAsync(string query, CancellationToken ct = default);
     Task<string> AnalyzeMealAsync(string userId, string prompt, CancellationToken ct = default);
-    Task<AgentNutritionSnapshot> BuildDailyNutritionSnapshotAsync(string userId, CancellationToken ct = default);
+    Task<AgentNutritionSnapshot> BuildDailyNutritionSnapshotAsync(string userId, string? languageCode, CancellationToken ct = default);
 }
 
 public interface IWorkoutTools
@@ -18,12 +18,12 @@ public interface IWorkoutTools
 
 public interface IProgressTools
 {
-    Task<ProgressSummaryDto> GetSummaryAsync(string userId, CancellationToken ct = default);
+    Task<ProgressSummaryDto> GetSummaryAsync(string userId, string? languageCode, CancellationToken ct = default);
 }
 
 public interface IVisionTools
 {
-    Task<(string Summary, AgentNutritionSnapshot Snapshot, Dictionary<string, object?> StructuredPayload)> AnalyzeImageAsync(string userId, string? text, string imageDataUrl, CancellationToken ct = default);
+    Task<(string Summary, AgentNutritionSnapshot Snapshot, Dictionary<string, object?> StructuredPayload)> AnalyzeImageAsync(string userId, string? text, string imageDataUrl, string? languageCode, CancellationToken ct = default);
 }
 
 public interface IConversationMemory

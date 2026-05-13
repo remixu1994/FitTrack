@@ -10,9 +10,9 @@ public class ProgressCheckInAgent
         _progressTools = progressTools;
     }
 
-    public async Task<AgentExecutionResult> RunAsync(string userId, CancellationToken ct = default)
+    public async Task<AgentExecutionResult> RunAsync(string userId, string? languageCode, CancellationToken ct = default)
     {
-        var summary = await _progressTools.GetSummaryAsync(userId, ct);
+        var summary = await _progressTools.GetSummaryAsync(userId, languageCode, ct);
         var structuredPayload = new Dictionary<string, object?>
         {
             ["headline"] = summary.Headline,

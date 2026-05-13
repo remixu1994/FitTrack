@@ -45,7 +45,7 @@ public class NutritionTools : INutritionTools
         return $"Estimated {result.TotalCalories:F0} kcal across {result.Items.Count} food item(s).";
     }
 
-    public async Task<AgentNutritionSnapshot> BuildDailyNutritionSnapshotAsync(string userId, CancellationToken ct = default)
+    public async Task<AgentNutritionSnapshot> BuildDailyNutritionSnapshotAsync(string userId, string? languageCode, CancellationToken ct = default)
     {
         var summary = await _foodRecordService.GetNutritionSummaryByDateAsync(userId, DateTime.UtcNow.Date, ct);
         return new AgentNutritionSnapshot(
@@ -65,8 +65,12 @@ public class NutritionTools : INutritionTools
             RemainingFatG: Math.Max(0, 70 - summary.TotalFat),
             NextSuggestions: new Dictionary<string, object?>
             {
-                ["protein"] = summary.TotalProtein < 120 ? "Increase protein in the next meal." : "Protein intake is on track.",
-                ["logging"] = summary.RecordCount == 0 ? "Log your first meal to unlock more accurate coaching." : "Keep logging meals for tighter estimates."
+                ["protein"] = summary.TotalProtein < 120
+                    ? AppLanguageSupport.Select(languageCode, "Increase protein in the next meal.", "下一餐提高蛋白质摄入。")
+                    : AppLanguageSupport.Select(languageCode, "Protein intake is on track.", "蛋白质摄入基本达标。"),
+                ["logging"] = summary.RecordCount == 0
+                    ? AppLanguageSupport.Select(languageCode, "Log your first meal to unlock more accurate coaching.", "先记录今天的第一餐，后续建议会更准确。")
+                    : AppLanguageSupport.Select(languageCode, "Keep logging meals for tighter estimates.", "继续记录饮食，系统会给出更准确的估算。")
             });
     }
 }
@@ -122,8 +126,8 @@ public class ProgressTools : IProgressTools
         _progressService = progressService;
     }
 
-    public Task<ProgressSummaryDto> GetSummaryAsync(string userId, CancellationToken ct = default)
-        => _progressService.GetSummaryAsync(userId, ct);
+    public Task<ProgressSummaryDto> GetSummaryAsync(string userId, string? languageCode, CancellationToken ct = default)
+        => _progressService.GetSummaryAsync(userId, languageCode, ct);
 }
 
 public class VisionTools : IVisionTools
@@ -135,14 +139,19 @@ public class VisionTools : IVisionTools
         _foodAiService = foodAiService;
     }
 
-    public async Task<(string Summary, AgentNutritionSnapshot Snapshot, Dictionary<string, object?> StructuredPayload)> AnalyzeImageAsync(string userId, string? text, string imageDataUrl, CancellationToken ct = default)
+    public async Task<(string Summary, AgentNutritionSnapshot Snapshot, Dictionary<string, object?> StructuredPayload)> AnalyzeImageAsync(string userId, string? text, string imageDataUrl, string? languageCode, CancellationToken ct = default)
     {
         var result = await _foodAiService.AnalyzeAsync(new FoodRequest
         {
             Text = text,
             ImageDataUrl = imageDataUrl,
-            UserId = userId
+            UserId = userId,
+            LanguageCode = languageCode
         }, ct);
+
+        var summary = string.IsNullOrWhiteSpace(result.Summary)
+            ? AppLanguageSupport.Select(languageCode, $"Detected {result.Items.Count} food item(s), estimated {result.TotalCalories:F0} kcal.", $"识别到 {result.Items.Count} 个食物项目，估算约 {result.TotalCalories:F0} 千卡。")
+            : result.Summary;
 
         var structured = new Dictionary<string, object?>
         {
@@ -156,7 +165,7 @@ public class VisionTools : IVisionTools
                 ["confidence"] = item.Confidence,
                 ["servingHint"] = item.ServingHint
             }).ToList(),
-            ["summary"] = result.Summary
+            ["summary"] = summary
         };
 
         var snapshot = new AgentNutritionSnapshot(
@@ -166,13 +175,9 @@ public class VisionTools : IVisionTools
             ConsumedFatG: result.Items.Sum(i => i.FatGrams),
             NextSuggestions: new Dictionary<string, object?>
             {
-                ["vision"] = "Image-based nutrition estimates are approximate.",
-                ["follow_up"] = "Confirm portions if you need tighter macro targets."
+                ["vision"] = AppLanguageSupport.Select(languageCode, "Image-based nutrition estimates are approximate.", "基于图片的营养估算仅供参考。"),
+                ["follow_up"] = AppLanguageSupport.Select(languageCode, "Confirm portions if you need tighter macro targets.", "如果需要更精确的宏量目标，请补充份量信息。")
             });
-
-        var summary = string.IsNullOrWhiteSpace(result.Summary)
-            ? $"Detected {result.Items.Count} food item(s), estimated {result.TotalCalories:F0} kcal."
-            : result.Summary;
 
         return (summary, snapshot, structured);
     }

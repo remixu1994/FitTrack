@@ -39,6 +39,11 @@
   - `FitTrack.Copilot/Data/app.db`
 - 对 Identity、数据库迁移、种子数据、AI 配置这几类改动，必须同步检查启动流程 `Program.cs`。
 - 未经明确确认，不要重构 solution 结构，也不要假设用户要合并两个项目。
+- 每次任务完成前，必须执行与本次改动范围对应的 build / 编译校验，通过后才算完成任务:
+  - 修改 `FitTrack` 或 `FitTrack.Copilot` 的 `.cs` / `.csproj` / 配置相关代码时，至少运行对应项目的 `dotnet build`
+  - 修改 `FitTrack/FitTrack.React` 前端代码时，至少运行 `npm run build`
+  - 同时改动前后端时，前后端的 build 都要通过
+  - 若因运行中进程锁文件、环境缺失或外部依赖导致无法完成 build，必须在交付时明确说明阻塞原因，不能默认视为已完成
 
 ## 4. 本地运行记忆
 

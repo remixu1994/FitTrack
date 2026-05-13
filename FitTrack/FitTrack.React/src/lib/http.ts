@@ -1,5 +1,6 @@
 import { authStorage } from '@/lib/auth'
 import { apiBaseUrl } from '@/lib/config'
+import { getPersistedAppLanguage } from '@/lib/language'
 import type { ApiResponse, AuthResponse, AuthenticatedUser } from '@/types/fittrack'
 
 type FetchOptions = RequestInit & {
@@ -20,6 +21,7 @@ async function performRequest(path: string, options: FetchOptions = {}): Promise
   const { authenticated = true, retryOnAuthFailure = true, headers, ...init } = options
   const token = authenticated ? authStorage.getToken() : null
   const requestHeaders = buildHeaders(headers, init.body)
+  requestHeaders.set('X-FitTrack-Language', getPersistedAppLanguage())
   if (token) {
     requestHeaders.set('Authorization', `Bearer ${token}`)
   }

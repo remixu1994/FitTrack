@@ -74,6 +74,7 @@ public static class ChatEndpoints
         httpContext.Response.ContentType = "application/x-ndjson; charset=utf-8";
 
         var userId = httpContext.User.GetRequiredUserId();
+        var languageCode = AppLanguageSupport.Normalize(request.LanguageCode ?? httpContext.Request.Headers[AppLanguageSupport.HeaderName].ToString());
         var thread = await conversationService.GetThreadAsync(userId, request.ThreadId, ct);
         if (thread is null)
         {
@@ -138,6 +139,7 @@ public static class ChatEndpoints
                                request.ThreadId,
                                request.ContentText,
                                request.MealPhoto?.DataUrl,
+                               languageCode,
                                ct).WithCancellation(ct))
             {
                 switch (update.Type)

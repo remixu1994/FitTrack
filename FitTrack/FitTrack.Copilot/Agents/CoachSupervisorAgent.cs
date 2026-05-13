@@ -32,8 +32,10 @@ public class CoachSupervisorAgent : ICoachChatService
         string threadId,
         string? text,
         string? imageDataUrl,
+        string? languageCode,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
+        var normalizedLanguageCode = AppLanguageSupport.Normalize(languageCode);
         var chatClient = await _chatClientFactory.CreateAsync(userId, ct);
         var history = await _conversationMemory.GetRecentMessagesAsync(threadId, 8, ct);
         var prompt = text?.Trim() ?? string.Empty;
@@ -42,7 +44,7 @@ public class CoachSupervisorAgent : ICoachChatService
         {
             var agent = new VisionNutritionAgent(
                 _serviceProvider.GetRequiredService<IVisionTools>());
-            var result = await agent.RunAsync(userId, prompt, imageDataUrl, ct);
+            var result = await agent.RunAsync(userId, prompt, imageDataUrl, normalizedLanguageCode, ct);
             await foreach (var update in StreamImmediateResult(result, ct))
             {
                 yield return update;
@@ -51,15 +53,15 @@ public class CoachSupervisorAgent : ICoachChatService
             yield break;
         }
 
-        var wantsProgress = ContainsAny(prompt, "progress", "check-in", "summary", "weight", "weekly", "month");
-        var wantsWorkout = ContainsAny(prompt, "workout", "training", "exercise", "plan", "gym", "session");
-        var wantsNutrition = ContainsAny(prompt, "meal", "food", "diet", "calorie", "protein", "carb", "macro", "nutrition");
+        var wantsProgress = ContainsAny(prompt, "progress", "check-in", "summary", "weight", "weekly", "month", "进度", "复盘", "总结", "体重", "本周", "每周", "本月");
+        var wantsWorkout = ContainsAny(prompt, "workout", "training", "exercise", "plan", "gym", "session", "训练", "锻炼", "健身", "计划", "动作", "课程", "力量", "有氧");
+        var wantsNutrition = ContainsAny(prompt, "meal", "food", "diet", "calorie", "protein", "carb", "macro", "nutrition", "饮食", "营养", "热量", "蛋白", "碳水", "脂肪", "食物", "餐");
 
         if (wantsProgress && !wantsWorkout && !wantsNutrition)
         {
             var progressAgent = new ProgressCheckInAgent(
                 _serviceProvider.GetRequiredService<IProgressTools>());
-            var result = await progressAgent.RunAsync(userId, ct);
+            var result = await progressAgent.RunAsync(userId, normalizedLanguageCode, ct);
             await foreach (var update in StreamImmediateResult(result, ct))
             {
                 yield return update;
@@ -75,6 +77,7 @@ public class CoachSupervisorAgent : ICoachChatService
                                userId,
                                history,
                                prompt,
+                               normalizedLanguageCode,
                                ct,
                                new WorkoutAgent(chatClient, _serviceProvider.GetRequiredService<IWorkoutTools>(), _requestContextAccessor),
                                new NutritionAgent(chatClient, _serviceProvider.GetRequiredService<INutritionTools>(), _requestContextAccessor)))
@@ -92,6 +95,7 @@ public class CoachSupervisorAgent : ICoachChatService
                                userId,
                                history,
                                prompt,
+                               normalizedLanguageCode,
                                ct,
                                new WorkoutAgent(chatClient, _serviceProvider.GetRequiredService<IWorkoutTools>(), _requestContextAccessor)))
             {
@@ -105,7 +109,7 @@ public class CoachSupervisorAgent : ICoachChatService
         {
             var progressAgent = new ProgressCheckInAgent(
                 _serviceProvider.GetRequiredService<IProgressTools>());
-            var result = await progressAgent.RunAsync(userId, ct);
+            var result = await progressAgent.RunAsync(userId, normalizedLanguageCode, ct);
             await foreach (var update in StreamImmediateResult(result, ct))
             {
                 yield return update;
@@ -118,7 +122,10 @@ public class CoachSupervisorAgent : ICoachChatService
                            "CoachSupervisorAgent",
                            userId,
                            history,
-                           string.IsNullOrWhiteSpace(prompt) ? "Help me with my diet today." : prompt,
+                           string.IsNullOrWhiteSpace(prompt)
+                               ? AppLanguageSupport.Select(normalizedLanguageCode, "Help me with my diet today.", "帮我规划今天的饮食。")
+                               : prompt,
+                           normalizedLanguageCode,
                            ct,
                            new NutritionAgent(chatClient, _serviceProvider.GetRequiredService<INutritionTools>(), _requestContextAccessor)))
         {
@@ -158,6 +165,7 @@ public class CoachSupervisorAgent : ICoachChatService
         string userId,
         IReadOnlyList<ConversationMessage> history,
         string prompt,
+        string? languageCode,
         [EnumeratorCancellation] CancellationToken ct,
         params IAgentSubAgent[] subAgents)
     {
@@ -170,7 +178,7 @@ public class CoachSupervisorAgent : ICoachChatService
 
             if (subAgent is IStreamingSubAgent streamingSubAgent)
             {
-                await foreach (var update in streamingSubAgent.ExecuteStreamingAsync(userId, history, prompt, ct).WithCancellation(ct))
+                await foreach (var update in streamingSubAgent.ExecuteStreamingAsync(userId, history, prompt, languageCode, ct).WithCancellation(ct))
                 {
                     if (update.Type == CoachStreamEventType.Token && !string.IsNullOrWhiteSpace(update.Value))
                     {
@@ -197,7 +205,7 @@ public class CoachSupervisorAgent : ICoachChatService
                 continue;
             }
 
-            var result = await subAgent.ExecuteAsync(userId, history, prompt, ct);
+            var result = await subAgent.ExecuteAsync(userId, history, prompt, languageCode, ct);
             if (result.ToolEvents is not null)
             {
                 foreach (var toolEvent in result.ToolEvents)

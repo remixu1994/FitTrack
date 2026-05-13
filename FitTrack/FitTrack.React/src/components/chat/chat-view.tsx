@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DailySummaryCard, type DailySummaryCardContent } from '@/components/cards/daily-summary-card'
 import { DayPlanCard, type DayPlanCardContent } from '@/components/cards/day-plan-card'
 import { MealAnalysisCard, type MealAnalysisCardContent } from '@/components/cards/meal-analysis-card'
+import { useLanguage } from '@/components/providers/language-provider'
 import { apiFetch, apiFetchRaw, fetchBlobUrl } from '@/lib/http'
 import type { ChatAttachment, ChatMessage, ConversationThread, NutritionSnapshot, StreamEvent, ThreadDetail, UserProfile } from '@/types/fittrack'
 
@@ -60,6 +61,8 @@ const markdownComponents: Components = {
 }
 
 export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
+  const { language, locale } = useLanguage()
+  const isChinese = language === 'zh-CN'
   const [threads, setThreads] = useState<ConversationThread[]>([])
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
   const [threadDetail, setThreadDetail] = useState<ThreadDetail | null>(null)
@@ -86,8 +89,8 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
   )
   const dailySummaryContent = useMemo(() => buildDailySummaryContent(lastSnapshot), [lastSnapshot])
   const dayPlanContent = useMemo(() => buildDayPlanContent(lastSnapshot), [lastSnapshot])
-  const suggestedPrompts = useMemo(() => buildSuggestedPrompts(profile), [profile])
-  const welcomeCopy = useMemo(() => buildWelcomeCopy(profile), [profile])
+  const suggestedPrompts = useMemo(() => buildSuggestedPrompts(profile, language), [profile, language])
+  const welcomeCopy = useMemo(() => buildWelcomeCopy(profile, language), [profile, language])
   const activeThread = threads.find((thread) => thread.id === activeThreadId) ?? threadDetail
   const hasMessages = (threadDetail?.messages.length ?? 0) > 0 || streamText.length > 0
 
@@ -95,14 +98,14 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
     const items = await apiFetch<ConversationThread[]>('/api/chat/threads')
     setThreads(items)
     return items
-  }, [])
+  }, [isChinese, locale])
 
   const createThread = useCallback(async () => {
     setCreatingThread(true)
     try {
       const created = await apiFetch<ConversationThread>('/api/chat/threads', {
         method: 'POST',
-        body: JSON.stringify({ title: buildNewThreadTitle() }),
+        body: JSON.stringify({ title: buildNewThreadTitle(locale, isChinese) }),
       })
       setThreads((prev) => [created, ...prev.filter((item) => item.id !== created.id)])
       setThreadDetail({
@@ -119,14 +122,14 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
     } finally {
       setCreatingThread(false)
     }
-  }, [])
+  }, [isChinese])
 
   const loadThread = useCallback(async (threadId: string) => {
     try {
       const detail = await apiFetch<ThreadDetail>(`/api/chat/threads/${threadId}`)
       setThreadDetail(detail)
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Unable to load thread')
+      setError(loadError instanceof Error ? loadError.message : isChinese ? '无法加载会话' : 'Unable to load thread')
     }
   }, [])
 
@@ -151,11 +154,11 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
       const created = await createThread()
       setActiveThreadId(created.id)
     } catch (bootstrapError) {
-      setError(bootstrapError instanceof Error ? bootstrapError.message : 'Unable to load coach workspace')
+      setError(bootstrapError instanceof Error ? bootstrapError.message : isChinese ? '无法加载教练工作台' : 'Unable to load coach workspace')
     } finally {
       setLoading(false)
     }
-  }, [createThread, refreshThreads])
+  }, [createThread, isChinese, refreshThreads])
 
   useEffect(() => {
     void bootstrap()
@@ -247,11 +250,12 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
           threadId,
           contentText: trimmedText || null,
           mealPhoto: draftMealPhoto,
+          languageCode: language,
         }),
       })
 
       if (!response.ok || !response.body) {
-        setError('Unable to stream coach response')
+        setError(isChinese ? '无法流式返回教练回复' : 'Unable to stream coach response')
         setMessage((current) => current || trimmedText)
         setMealPhoto((current) => current ?? draftMealPhoto)
         return
@@ -294,7 +298,7 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
               break
             case 'error':
               restoreDraft = true
-              setError(event.error ?? 'Coach failed to answer')
+              setError(event.error ?? (isChinese ? '教练未能完成回复' : 'Coach failed to answer'))
               break
             case 'done':
               await Promise.all([loadThread(threadId), refreshThreads()])
@@ -310,7 +314,7 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
         setMealPhoto((current) => current ?? draftMealPhoto)
       }
     } catch (sendError) {
-      setError(sendError instanceof Error ? sendError.message : 'Unable to stream coach response')
+      setError(sendError instanceof Error ? sendError.message : isChinese ? '无法流式返回教练回复' : 'Unable to stream coach response')
       setMessage((current) => current || trimmedText)
       setMealPhoto((current) => current ?? draftMealPhoto)
     } finally {
@@ -323,8 +327,8 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
       <aside className="custom-scrollbar overflow-y-auto rounded-[32px] border border-white/10 bg-slate-950/55 p-5 xl:min-h-0">
         <div className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_transparent_55%),linear-gradient(180deg,_rgba(15,23,42,0.9),_rgba(2,6,23,0.55))] p-4">
           <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">Thread Memory</p>
-          <h3 className="mt-3 text-lg font-semibold text-white">Keep plan, meals, and review in one running session.</h3>
-          <p className="mt-2 text-sm text-slate-400">Your coach keeps better context when the day stays in one workspace.</p>
+          <h3 className="mt-3 text-lg font-semibold text-white">{isChinese ? '把计划、餐食和复盘留在同一个连续会话里。' : 'Keep plan, meals, and review in one running session.'}</h3>
+          <p className="mt-2 text-sm text-slate-400">{isChinese ? '当一天都在同一个工作区里进行时，教练能保留更完整的上下文。' : 'Your coach keeps better context when the day stays in one workspace.'}</p>
           <button
             className="mt-4 w-full rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.25em] text-cyan-100 transition hover:bg-cyan-300/15 disabled:opacity-60"
             disabled={creatingThread}
@@ -333,21 +337,21 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
               setActiveThreadId(created.id)
             }}
           >
-            {creatingThread ? 'Creating...' : 'New Today Session'}
+            {creatingThread ? (isChinese ? '创建中...' : 'Creating...') : isChinese ? '新建今日会话' : 'New Today Session'}
           </button>
         </div>
 
         <div className="mt-5 flex items-center justify-between">
-          <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Conversation threads</p>
+          <p className="text-xs uppercase tracking-[0.35em] text-slate-400">{isChinese ? '会话线程' : 'Conversation threads'}</p>
           <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-slate-400">
-            {threads.length} active
+            {isChinese ? `${threads.length} 个活跃` : `${threads.length} active`}
           </span>
         </div>
 
         <div className="mt-4 space-y-3">
           {threads.length === 0 ? (
             <div className="rounded-[24px] border border-dashed border-white/10 bg-white/5 px-4 py-5 text-sm text-slate-400">
-              No threads yet. Start with today&apos;s plan or a meal scan.
+              {isChinese ? '还没有会话。可以从今日计划或餐食识别开始。' : 'No threads yet. Start with today&apos;s plan or a meal scan.'}
             </div>
           ) : null}
           {threads.map((thread) => {
@@ -380,15 +384,15 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
           <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">Integrated Fitness Coach</p>
           <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h3 className="text-2xl font-semibold text-white">{activeThread?.title ?? 'Coach session'}</h3>
+              <h3 className="text-2xl font-semibold text-white">{activeThread?.title ?? (isChinese ? '教练会话' : 'Coach session')}</h3>
               <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                Plan training, analyze meals, and close the loop on recovery without switching contexts.
+                {isChinese ? '在不切换上下文的前提下完成训练规划、餐食分析和恢复复盘。' : 'Plan training, analyze meals, and close the loop on recovery without switching contexts.'}
               </p>
             </div>
             <div className="flex flex-wrap gap-2 text-xs uppercase tracking-[0.25em] text-slate-300">
-              <MetricPill label="Messages" value={String(threadDetail?.messages.length ?? 0)} />
-              <MetricPill label="Snapshots" value={String(threadDetail?.snapshots.length ?? 0)} />
-              <MetricPill label="Model" value={profile?.preferredModelConnectorId ? 'Custom model' : 'Tenant default'} />
+              <MetricPill label={isChinese ? '消息' : 'Messages'} value={String(threadDetail?.messages.length ?? 0)} />
+              <MetricPill label={isChinese ? '快照' : 'Snapshots'} value={String(threadDetail?.snapshots.length ?? 0)} />
+              <MetricPill label={isChinese ? '模型' : 'Model'} value={profile?.preferredModelConnectorId ? (isChinese ? '自定义模型' : 'Custom model') : isChinese ? '租户默认' : 'Tenant default'} />
             </div>
           </div>
         </header>
@@ -416,9 +420,13 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
                 >
                   <div className="mb-3 flex items-center justify-between gap-4">
                     <span className="text-[11px] uppercase tracking-[0.32em] text-slate-400">
-                      {item.role === 'assistant' ? (item.id === 'streaming' ? 'Coach Live' : 'Coach') : 'You'}
+                      {item.role === 'assistant'
+                        ? item.id === 'streaming'
+                          ? isChinese ? '教练回复中' : 'Coach Live'
+                          : isChinese ? '教练' : 'Coach'
+                        : isChinese ? '你' : 'You'}
                     </span>
-                    <span className="text-[11px] text-slate-500">{formatMessageTimestamp(item.createdAt)}</span>
+                    <span className="text-[11px] text-slate-500">{formatMessageTimestamp(item.createdAt, locale)}</span>
                   </div>
                   {item.role === 'assistant' ? (
                     <Markdown text={item.contentText ?? ''} />
@@ -446,7 +454,7 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M7 3v8M3 7l4 4 4-4" />
               </svg>
-              Scroll to latest
+              {isChinese ? '滚动到最新消息' : 'Scroll to latest'}
             </button>
           )}
         </div>
@@ -514,7 +522,7 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
                   void sendMessage()
                 }
               }}
-              placeholder="Tell your coach what you trained, what you ate, or drop in a meal photo for analysis."
+              placeholder={isChinese ? '告诉教练你练了什么、吃了什么，或者上传餐食图片让他分析。' : 'Tell your coach what you trained, what you ate, or drop in a meal photo for analysis.'}
               className="mt-4 w-full resize-none bg-transparent text-sm leading-6 text-white outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-70"
             />
 
@@ -524,7 +532,7 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
                   htmlFor="coach-meal-photo-input"
                   className="cursor-pointer rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.25em] text-slate-300 transition hover:border-cyan-300/30 hover:text-cyan-100"
                 >
-                  Add meal photo
+                  {isChinese ? '添加餐食图片' : 'Add meal photo'}
                 </label>
                 <input
                   id="coach-meal-photo-input"
@@ -539,7 +547,13 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
                   }}
                 />
                 <p className="text-xs text-slate-500">
-                  {mealPhoto ? 'Photo attached. Ask for a score, macro estimate, or swap suggestion.' : 'Text first, image second. Both can go in one turn.'}
+                  {mealPhoto
+                    ? isChinese
+                      ? '图片已附加。可以让教练打分、估算宏量，或给出替换建议。'
+                      : 'Photo attached. Ask for a score, macro estimate, or swap suggestion.'
+                    : isChinese
+                      ? '可以文字和图片一起发在同一轮。'
+                      : 'Text first, image second. Both can go in one turn.'}
                 </p>
               </div>
 
@@ -548,7 +562,7 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
                 className="rounded-full bg-cyan-300 px-5 py-3 text-xs font-semibold uppercase tracking-[0.3em] text-slate-950 transition disabled:opacity-60"
                 onClick={() => void sendMessage()}
               >
-                {loading ? 'Working' : 'Send'}
+                {loading ? (isChinese ? '处理中' : 'Working') : isChinese ? '发送' : 'Send'}
               </button>
             </div>
 
@@ -562,7 +576,7 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
                       className="rounded-full border border-rose-200/20 px-3 py-2 text-[11px] uppercase tracking-[0.25em]"
                       onClick={() => void sendMessage({ overrideText: lastSubmittedDraft.text, overrideMealPhoto: lastSubmittedDraft.mealPhoto })}
                     >
-                      Retry send
+                      {isChinese ? '重试发送' : 'Retry send'}
                     </button>
                     <button
                       type="button"
@@ -573,7 +587,7 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
                         textareaRef.current?.focus()
                       }}
                     >
-                      Restore draft
+                      {isChinese ? '恢复草稿' : 'Restore draft'}
                     </button>
                   </div>
                 ) : null}
@@ -585,10 +599,12 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
 
       <aside className="space-y-5 xl:custom-scrollbar xl:min-h-0 xl:overflow-y-auto xl:pr-1">
         <div className="rounded-[32px] border border-white/10 bg-slate-950/55 p-5">
-          <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">Coach Focus</p>
-          <h3 className="mt-3 text-lg font-semibold text-white">Important outputs should settle into cards, not disappear in chat bubbles.</h3>
+          <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">{isChinese ? '教练焦点' : 'Coach Focus'}</p>
+          <h3 className="mt-3 text-lg font-semibold text-white">
+            {isChinese ? '重要输出应该沉淀成卡片，而不是消失在聊天气泡里。' : 'Important outputs should settle into cards, not disappear in chat bubbles.'}
+          </h3>
           <p className="mt-2 text-sm text-slate-400">
-            Daily intake, day plan, and meal feedback stay visible here while the conversation keeps moving.
+            {isChinese ? '每日摄入、日计划和餐食反馈会固定显示在这里，聊天继续推进时也不会丢。' : 'Daily intake, day plan, and meal feedback stay visible here while the conversation keeps moving.'}
           </p>
         </div>
 
@@ -596,9 +612,9 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
           <DailySummaryCard content={dailySummaryContent} />
         ) : (
           <InsightPlaceholder
-            eyebrow="Daily Summary"
-            title="Today&apos;s intake and next actions will settle here."
-            body="Once the coach has enough context, calories, macros, and follow-up actions stay pinned in this rail."
+            eyebrow={isChinese ? '每日摘要' : 'Daily Summary'}
+            title={isChinese ? '今天的摄入和下一步动作会固定在这里。' : "Today&apos;s intake and next actions will settle here."}
+            body={isChinese ? '一旦教练拿到足够上下文，热量、宏量和后续动作都会固定显示在这条右侧栏。' : 'Once the coach has enough context, calories, macros, and follow-up actions stay pinned in this rail.'}
           />
         )}
 
@@ -606,9 +622,9 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
           <DayPlanCard content={dayPlanContent} />
         ) : (
           <InsightPlaceholder
-            eyebrow="Day Plan"
-            title="Ask for today&apos;s training and nutrition plan."
-            body="The first planning turn should promote macros, training type, and execution guidance into a stable card."
+            eyebrow={isChinese ? '日计划' : 'Day Plan'}
+            title={isChinese ? '向教练索要今天的训练和饮食计划。' : "Ask for today&apos;s training and nutrition plan."}
+            body={isChinese ? '第一轮规划完成后，宏量、训练类型和执行建议会沉淀成一张稳定卡片。' : 'The first planning turn should promote macros, training type, and execution guidance into a stable card.'}
           />
         )}
 
@@ -616,9 +632,9 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
           <MealAnalysisCard content={latestMealAnalysis} />
         ) : (
           <InsightPlaceholder
-            eyebrow="Meal Analysis"
-            title="Upload a meal photo or describe a plate."
-            body="Photo-based analysis and meal feedback will stack here so you can compare decisions without scrolling chat."
+            eyebrow={isChinese ? '餐食分析' : 'Meal Analysis'}
+            title={isChinese ? '上传餐食图片，或者描述你面前这盘食物。' : 'Upload a meal photo or describe a plate.'}
+            body={isChinese ? '基于图片的分析和餐食反馈会堆叠在这里，方便你不翻聊天记录也能比较不同决策。' : 'Photo-based analysis and meal feedback will stack here so you can compare decisions without scrolling chat.'}
           />
         )}
       </aside>
@@ -627,6 +643,8 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
 }
 
 function AttachmentPreview({ attachment }: { attachment: ChatAttachment }) {
+  const { language } = useLanguage()
+  const isChinese = language === 'zh-CN'
   const [src, setSrc] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -642,7 +660,7 @@ function AttachmentPreview({ attachment }: { attachment: ChatAttachment }) {
         }
       } catch (attachmentError) {
         if (active) {
-          setError(attachmentError instanceof Error ? attachmentError.message : 'Unable to load attachment')
+          setError(attachmentError instanceof Error ? attachmentError.message : isChinese ? '无法加载附件' : 'Unable to load attachment')
         }
       }
     }
@@ -662,20 +680,20 @@ function AttachmentPreview({ attachment }: { attachment: ChatAttachment }) {
   }
 
   if (!src) {
-    return <p className="text-xs text-slate-400">Loading attachment...</p>
+    return <p className="text-xs text-slate-400">{isChinese ? '正在加载附件...' : 'Loading attachment...'}</p>
   }
 
   return (
     <div>
       <Image
         src={src}
-        alt={attachment.fileName ?? 'Meal photo'}
+        alt={attachment.fileName ?? (isChinese ? '餐食图片' : 'Meal photo')}
         width={720}
         height={720}
         unoptimized
         className="max-h-72 rounded-2xl border border-white/10 object-cover"
       />
-      <p className="mt-2 text-xs text-slate-400">{attachment.fileName ?? 'Meal photo'}</p>
+      <p className="mt-2 text-xs text-slate-400">{attachment.fileName ?? (isChinese ? '餐食图片' : 'Meal photo')}</p>
     </div>
   )
 }
@@ -693,6 +711,8 @@ function WelcomePanel({
   onPromptClick: (prompt: PromptAction) => void
   onAttachClick: () => void
 }) {
+  const { language } = useLanguage()
+  const isChinese = language === 'zh-CN'
   return (
     <div className="rounded-[34px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_55%),radial-gradient(circle_at_right,_rgba(16,185,129,0.12),_transparent_40%),linear-gradient(180deg,_rgba(8,15,33,0.94),_rgba(2,6,23,0.75))] p-6 shadow-2xl shadow-cyan-950/20">
       <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">{copy.eyebrow}</p>
@@ -730,10 +750,10 @@ function WelcomePanel({
           className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.25em] text-cyan-100 disabled:opacity-60"
           onClick={onAttachClick}
         >
-          Add meal photo first
+          {isChinese ? '先添加餐食图片' : 'Add meal photo first'}
         </button>
         <span className="rounded-full border border-white/10 px-4 py-3 text-xs uppercase tracking-[0.25em] text-slate-400">
-          Guided opening, not an empty box
+          {isChinese ? '引导式开场，不是空输入框' : 'Guided opening, not an empty box'}
         </span>
       </div>
     </div>
@@ -804,56 +824,66 @@ function renderStructuredCard(message: ChatMessage) {
   return null
 }
 
-function buildSuggestedPrompts(profile: UserProfile | null): PromptAction[] {
+function buildSuggestedPrompts(profile: UserProfile | null, language: 'en' | 'zh-CN'): PromptAction[] {
+  const isChinese = language === 'zh-CN'
   const firstName = profile?.displayName?.split(' ')[0]
   const salutation = firstName ? `${firstName}, ` : ''
 
   return [
     {
       id: 'plan',
-      label: 'Plan Today',
-      prompt: `${salutation}help me plan today's training and nutrition.`,
-      description: 'Best first turn when you want macros, training type, and execution guidance in one pass.',
+      label: isChinese ? '规划今天' : 'Plan Today',
+      prompt: isChinese ? `${firstName ? `${firstName}，` : ''}帮我规划今天的训练和饮食。` : `${salutation}help me plan today's training and nutrition.`,
+      description: isChinese ? '适合作为第一轮消息，一次拿到宏量目标、训练类型和执行建议。' : 'Best first turn when you want macros, training type, and execution guidance in one pass.',
     },
     {
       id: 'meal',
-      label: 'Analyze Meal',
-      prompt: 'Analyze this meal and tell me what to change.',
-      description: 'Use this after attaching a meal photo or if you want quick macro and score feedback.',
+      label: isChinese ? '分析餐食' : 'Analyze Meal',
+      prompt: isChinese ? '分析这顿饭，并告诉我该怎么调整。' : 'Analyze this meal and tell me what to change.',
+      description: isChinese ? '适合在上传餐食图片后，快速拿到宏量估算和评分反馈。' : 'Use this after attaching a meal photo or if you want quick macro and score feedback.',
     },
     {
       id: 'review',
-      label: 'Evening Review',
-      prompt: "Help me do tonight's recovery and nutrition review.",
-      description: 'Good for closing the loop on intake, readiness, and what to fix tomorrow.',
+      label: isChinese ? '晚间复盘' : 'Evening Review',
+      prompt: isChinese ? '帮我做今晚的恢复和营养复盘。' : "Help me do tonight's recovery and nutrition review.",
+      description: isChinese ? '适合一天结束时收口，确认今天做得如何、明天该修正什么。' : 'Good for closing the loop on intake, readiness, and what to fix tomorrow.',
     },
     {
       id: 'carb',
-      label: 'Carb Decision',
-      prompt: "Given my goal and today's training, should I run a higher-carb or lower-carb day?",
-      description: 'Use this when you want a direct fuel decision without opening a full daily plan.',
+      label: isChinese ? '碳水决策' : 'Carb Decision',
+      prompt: isChinese ? '结合我的目标和今天的训练，我今天应该走高碳还是低碳？' : "Given my goal and today's training, should I run a higher-carb or lower-carb day?",
+      description: isChinese ? '当你想快速做燃料决策，不想展开整套日计划时使用。' : 'Use this when you want a direct fuel decision without opening a full daily plan.',
     },
   ]
 }
 
-function buildWelcomeCopy(profile: UserProfile | null) {
+function buildWelcomeCopy(profile: UserProfile | null, language: 'en' | 'zh-CN') {
+  const isChinese = language === 'zh-CN'
   const displayName = profile?.displayName?.trim()
   const goal = toDisplayLabel(profile?.goal)
   const activityLevel = toDisplayLabel(profile?.activityLevel)
 
   return {
-    eyebrow: 'Guided Opening',
+    eyebrow: isChinese ? '引导式开场' : 'Guided Opening',
     title: displayName
-      ? `${displayName}, let's align training, food, and recovery for today.`
-      : "Let's line up today's training, meals, and recovery in one conversation.",
+      ? isChinese
+        ? `${displayName}，我们先把今天的训练、饮食和恢复安排对齐。`
+        : `${displayName}, let's align training, food, and recovery for today.`
+      : isChinese
+        ? '先在一段对话里把今天的训练、饮食和恢复串起来。'
+        : "Let's line up today's training, meals, and recovery in one conversation.",
     description:
       profile
-        ? "I can use your baseline profile, recent thread context, and today's inputs to build a plan, score a meal, or close the day with a review."
-        : 'Start with a daily plan, a meal photo, or an evening review. Important outcomes will stay pinned in the insight rail on the right.',
+        ? isChinese
+          ? '我会结合你的基础档案、最近会话上下文和今天的输入，帮你制定计划、评估餐食，或完成一天的复盘。'
+          : "I can use your baseline profile, recent thread context, and today's inputs to build a plan, score a meal, or close the day with a review."
+        : isChinese
+          ? '可以从今日计划、餐食图片或晚间复盘开始。重要结果会固定显示在右侧洞察栏。'
+          : 'Start with a daily plan, a meal photo, or an evening review. Important outcomes will stay pinned in the insight rail on the right.',
     chips: [
-      goal ? `Goal ${goal}` : 'Goal ready',
-      activityLevel ? `Activity ${activityLevel}` : 'Activity baseline',
-      profile?.preferredModelConnectorId ? 'Custom model selected' : 'Tenant default model',
+      goal ? (isChinese ? `目标 ${goal}` : `Goal ${goal}`) : isChinese ? '目标已就绪' : 'Goal ready',
+      activityLevel ? (isChinese ? `活动 ${activityLevel}` : `Activity ${activityLevel}`) : isChinese ? '活动基线' : 'Activity baseline',
+      profile?.preferredModelConnectorId ? (isChinese ? '已选择自定义模型' : 'Custom model selected') : isChinese ? '租户默认模型' : 'Tenant default model',
     ],
   }
 }
@@ -952,7 +982,7 @@ function formatThreadTitle(thread: ConversationThread) {
 }
 
 function formatThreadTimestamp(value: string) {
-  return new Date(value).toLocaleString([], {
+  return new Date(value).toLocaleString(undefined, {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -960,8 +990,8 @@ function formatThreadTimestamp(value: string) {
   })
 }
 
-function formatMessageTimestamp(value: string) {
-  return new Date(value).toLocaleTimeString([], {
+function formatMessageTimestamp(value: string, locale: string) {
+  return new Date(value).toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   })
@@ -974,9 +1004,11 @@ function formatShortTime(value: string) {
   })
 }
 
-function buildNewThreadTitle() {
+function buildNewThreadTitle(locale: string, isChinese: boolean) {
   const now = new Date()
-  return `Today / ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+  return isChinese
+    ? `今日 / ${now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}`
+    : `Today / ${now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}`
 }
 
 function buildSnapshotCallout(snapshot: NutritionSnapshot) {

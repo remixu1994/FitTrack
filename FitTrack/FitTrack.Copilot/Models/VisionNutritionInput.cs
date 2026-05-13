@@ -8,4 +8,5 @@ namespace FitTrack.Copilot.Models;
 public sealed record VisionNutritionInput(
     IReadOnlyList<FilePart>? Images,
     string? Hint,
-    string? UserId);
+    string? UserId,
+    string? LanguageCode);

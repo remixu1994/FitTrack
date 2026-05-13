@@ -66,6 +66,8 @@ public sealed class VisionFoodRecognitionPlugin
             messages.Add(new ChatMessage(ChatRole.User, input.Hint));
         }
 
+        messages.Add(new ChatMessage(ChatRole.System, AppLanguageSupport.BuildReplyInstruction(input.LanguageCode)));
+
         if (input.Images != null && input.Images.Any())
         {
             messages.AddRange(input.Images.Select(img =>

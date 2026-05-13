@@ -30,6 +30,14 @@ public class TenantModelConnector
 
     public string? EncryptedApiKey { get; set; }
 
+    public double? InputTokenPricePer1M { get; set; }
+
+    public double? OutputTokenPricePer1M { get; set; }
+
+    public double? CacheReadTokenPricePer1M { get; set; }
+
+    public double? CacheWriteTokenPricePer1M { get; set; }
+
     public bool IsDefault { get; set; }
 
     public bool IsEnabled { get; set; } = true;

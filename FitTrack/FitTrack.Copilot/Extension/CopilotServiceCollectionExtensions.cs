@@ -18,6 +18,8 @@ public static class CopilotServiceCollectionExtensions
 
         services.AddScoped<ITenantBootstrapService, TenantBootstrapService>();
         services.AddScoped<ITenantModelConnectorService, TenantModelConnectorService>();
+        services.AddScoped<IModelRequestContextAccessor, ModelRequestContextAccessor>();
+        services.AddScoped<IModelUsageService, ModelUsageService>();
         services.AddScoped<IModelConnectorChatClientBuilder, ModelConnectorChatClientBuilder>();
         services.AddScoped<IAIChatClientFactory, AIChatClientFactory>();
 

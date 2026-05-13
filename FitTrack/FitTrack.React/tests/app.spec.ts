@@ -109,3 +109,23 @@ test('admin can open the tenant model connector settings page', async ({ page })
 
   await expectNoHydrationErrors(errors)
 })
+
+test('admin can open the model usage dashboard', async ({ page }) => {
+  const errors = createClientErrorCollector(page)
+
+  await seedAuthenticatedSession(page, adminUser)
+  await mockCoreSession(page, adminUser)
+  await mockProfilePage(page, adminUser)
+  await mockModelConnectorEndpoints(page)
+  await mockAdminModelConnectorEndpoints(page)
+
+  await page.goto('/settings/model-usage')
+
+  await expect(page.getByRole('heading', { name: 'Usage' })).toBeVisible()
+  await expect(page.getByText('Model request analytics')).toBeVisible()
+  await expect(page.getByText('Structured model call history')).toBeVisible()
+  await expect(page.getByText('High protein lunch recommendation')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Cleanup 90d+' })).toBeVisible()
+
+  await expectNoHydrationErrors(errors)
+})

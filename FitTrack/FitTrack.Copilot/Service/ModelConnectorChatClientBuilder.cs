@@ -36,6 +36,13 @@ public sealed class ModelConnectorChatClientBuilder : IModelConnectorChatClientB
             _ => throw new InvalidOperationException($"Unsupported connector protocol '{connector.Protocol}'.")
         };
 
+        inner = new ModelUsageTrackingChatClient(
+            inner,
+            connector,
+            _serviceProvider.GetRequiredService<IModelUsageService>(),
+            _serviceProvider.GetRequiredService<IModelRequestContextAccessor>(),
+            _serviceProvider.GetRequiredService<ILogger<ModelUsageTrackingChatClient>>());
+
         var builder = new ChatClientBuilder(inner);
         if (_configuration.GetValue("AI:EnableCaching", true))
         {

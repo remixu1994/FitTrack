@@ -136,8 +136,99 @@ export type TenantModelConnectorAdmin = {
   isDefault: boolean
   isEnabled: boolean
   hasApiKey: boolean
+  inputTokenPricePer1M?: number | null
+  outputTokenPricePer1M?: number | null
+  cacheReadTokenPricePer1M?: number | null
+  cacheWriteTokenPricePer1M?: number | null
   createdAt: string
   updatedAt: string
+}
+
+export type ModelUsageOverview = {
+  range: '24h' | '7d' | '30d'
+  rangeStartUtc: string
+  rangeEndUtc: string
+  totalRequests: number
+  inputTokens: number
+  outputTokens: number
+  cacheReadTokens: number
+  cacheWriteTokens: number
+  totalTokens: number
+  totalCostUsd?: number | null
+  hasUnpricedRequests: boolean
+  modelCount: number
+  requestsPerMinute: number
+  tokensPerMinute: number
+}
+
+export type ModelUsageTimeBucket = {
+  bucketStartUtc: string
+  label: string
+  requestCount: number
+  inputTokens: number
+  outputTokens: number
+  cacheReadTokens: number
+  cacheWriteTokens: number
+  totalTokens: number
+  totalCostUsd?: number | null
+  hasUnpricedRequests: boolean
+}
+
+export type ModelUsageSeriesPoint = {
+  bucketStartUtc: string
+  label: string
+  value: number
+}
+
+export type ModelUsageModelSeries = {
+  modelId: string
+  label: string
+  points: ModelUsageSeriesPoint[]
+}
+
+export type ModelUsageCharts = {
+  requestCostBuckets: ModelUsageTimeBucket[]
+  tokenBuckets: ModelUsageTimeBucket[]
+  modelCostSeries: ModelUsageModelSeries[]
+  modelRequestSeries: ModelUsageModelSeries[]
+}
+
+export type ModelRequestLogItem = {
+  id: string
+  requestTimeUtc: string
+  threadId?: string | null
+  conversationMessageId?: string | null
+  connectorId: string
+  connectorDisplayName: string
+  providerPreset: string
+  protocol: TenantModelProtocol
+  modelId: string
+  requestType: string
+  status: string
+  userAgent?: string | null
+  requestSummary?: string | null
+  toolEventsSummary?: string | null
+  durationMs?: number | null
+  inputTokens?: number | null
+  outputTokens?: number | null
+  cacheReadTokens?: number | null
+  cacheWriteTokens?: number | null
+  totalTokens?: number | null
+  costUsd?: number | null
+  errorCode?: string | null
+  errorMessage?: string | null
+}
+
+export type ModelRequestLogList = {
+  page: number
+  pageSize: number
+  totalCount: number
+  items: ModelRequestLogItem[]
+}
+
+export type ModelRequestLogCleanup = {
+  deletedCount: number
+  cutoffUtc: string
 }
 
 export type FoodRecord = {

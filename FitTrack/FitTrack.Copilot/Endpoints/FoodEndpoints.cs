@@ -36,9 +36,20 @@ public static class FoodEndpoints
         // AI 卡路里分析接口（支持文字、图片或混合输入）
         group.MapPost("/analyze", async (
                 [FromBody] FoodRequest req,
+                HttpContext httpContext,
                 [FromServices] IFoodAiService ai,
+                [FromServices] IModelRequestContextAccessor requestContextAccessor,
                 CancellationToken ct) =>
             {
+                using var _ = requestContextAccessor.BeginScope(context =>
+                {
+                    context.UserId = req.UserId ?? "anonymous";
+                    context.RequestType = Data.ModelRequestType.Chat;
+                    context.UserAgent = httpContext.Request.Headers.UserAgent.ToString();
+                    context.ClientIpHash = ModelRequestContext.HashClientIp(httpContext.Connection.RemoteIpAddress?.ToString());
+                    context.RequestSummary = BuildAnalyzeSummary(req.Text, req.ImageDataUrl);
+                });
+
                 var result = await ai.AnalyzeAsync(req, ct);
                 return Results.Ok(result);
             })
@@ -49,5 +60,31 @@ public static class FoodEndpoints
             .Produces(StatusCodes.Status403Forbidden);
 
         return app;
+    }
+
+    private static string BuildAnalyzeSummary(string? text, string? imageDataUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(imageDataUrl) && !string.IsNullOrWhiteSpace(text))
+        {
+            return $"food analyze mixed: {Truncate(text)}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(imageDataUrl))
+        {
+            return "food analyze image";
+        }
+
+        return $"food analyze text: {Truncate(text)}";
+    }
+
+    private static string Truncate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var normalized = value.Trim().Replace("\r", " ").Replace("\n", " ");
+        return normalized.Length <= 160 ? normalized : normalized[..160];
     }
 }

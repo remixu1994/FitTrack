@@ -10,17 +10,20 @@ public class CoachSupervisorAgent : ICoachChatService
     private readonly IAIChatClientFactory _chatClientFactory;
     private readonly IConversationMemory _conversationMemory;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IModelRequestContextAccessor _requestContextAccessor;
     private readonly ILogger<CoachSupervisorAgent> _logger;
 
     public CoachSupervisorAgent(
         IAIChatClientFactory chatClientFactory,
         IConversationMemory conversationMemory,
         IServiceProvider serviceProvider,
+        IModelRequestContextAccessor requestContextAccessor,
         ILogger<CoachSupervisorAgent> logger)
     {
         _chatClientFactory = chatClientFactory;
         _conversationMemory = conversationMemory;
         _serviceProvider = serviceProvider;
+        _requestContextAccessor = requestContextAccessor;
         _logger = logger;
     }
 
@@ -73,8 +76,8 @@ public class CoachSupervisorAgent : ICoachChatService
                                history,
                                prompt,
                                ct,
-                               new WorkoutAgent(chatClient, _serviceProvider.GetRequiredService<IWorkoutTools>()),
-                               new NutritionAgent(chatClient, _serviceProvider.GetRequiredService<INutritionTools>())))
+                               new WorkoutAgent(chatClient, _serviceProvider.GetRequiredService<IWorkoutTools>(), _requestContextAccessor),
+                               new NutritionAgent(chatClient, _serviceProvider.GetRequiredService<INutritionTools>(), _requestContextAccessor)))
             {
                 yield return update;
             }
@@ -90,7 +93,7 @@ public class CoachSupervisorAgent : ICoachChatService
                                history,
                                prompt,
                                ct,
-                               new WorkoutAgent(chatClient, _serviceProvider.GetRequiredService<IWorkoutTools>())))
+                               new WorkoutAgent(chatClient, _serviceProvider.GetRequiredService<IWorkoutTools>(), _requestContextAccessor)))
             {
                 yield return update;
             }
@@ -117,7 +120,7 @@ public class CoachSupervisorAgent : ICoachChatService
                            history,
                            string.IsNullOrWhiteSpace(prompt) ? "Help me with my diet today." : prompt,
                            ct,
-                           new NutritionAgent(chatClient, _serviceProvider.GetRequiredService<INutritionTools>())))
+                           new NutritionAgent(chatClient, _serviceProvider.GetRequiredService<INutritionTools>(), _requestContextAccessor)))
         {
             yield return update;
         }

@@ -307,7 +307,24 @@ export async function mockAdminModelConnectorEndpoints(page: Page) {
     },
   ]
 
-  let connectors = [
+  let connectors: Array<{
+    id: string
+    tenantId: string
+    displayName: string
+    providerPreset: string
+    protocol: string
+    baseUrl: string
+    modelId: string
+    isDefault: boolean
+    isEnabled: boolean
+    hasApiKey: boolean
+    inputTokenPricePer1M: number | null
+    outputTokenPricePer1M: number | null
+    cacheReadTokenPricePer1M: number | null
+    cacheWriteTokenPricePer1M: number | null
+    createdAt: string
+    updatedAt: string
+  }> = [
     {
       id: 'connector-default-azure-openai',
       tenantId: 'tenant-default',
@@ -319,6 +336,10 @@ export async function mockAdminModelConnectorEndpoints(page: Page) {
       isDefault: true,
       isEnabled: true,
       hasApiKey: true,
+      inputTokenPricePer1M: 2.4,
+      outputTokenPricePer1M: 9.6,
+      cacheReadTokenPricePer1M: 0.6,
+      cacheWriteTokenPricePer1M: 1.2,
       createdAt: '2026-05-01T09:00:00.000Z',
       updatedAt: '2026-05-01T09:00:00.000Z',
     },
@@ -347,6 +368,10 @@ export async function mockAdminModelConnectorEndpoints(page: Page) {
         isDefault: Boolean(payload.isDefault),
         isEnabled: Boolean(payload.isEnabled),
         hasApiKey: Boolean(payload.apiKey),
+        inputTokenPricePer1M: Number(payload.inputTokenPricePer1M ?? 0) || null,
+        outputTokenPricePer1M: Number(payload.outputTokenPricePer1M ?? 0) || null,
+        cacheReadTokenPricePer1M: Number(payload.cacheReadTokenPricePer1M ?? 0) || null,
+        cacheWriteTokenPricePer1M: Number(payload.cacheWriteTokenPricePer1M ?? 0) || null,
         createdAt: '2026-05-01T09:00:00.000Z',
         updatedAt: '2026-05-01T09:00:00.000Z',
       }
@@ -379,6 +404,10 @@ export async function mockAdminModelConnectorEndpoints(page: Page) {
               isDefault: Boolean(payload.isDefault),
               isEnabled: Boolean(payload.isEnabled),
               hasApiKey: item.hasApiKey || Boolean(payload.apiKey),
+              inputTokenPricePer1M: payload.inputTokenPricePer1M === null || payload.inputTokenPricePer1M === undefined ? null : Number(payload.inputTokenPricePer1M),
+              outputTokenPricePer1M: payload.outputTokenPricePer1M === null || payload.outputTokenPricePer1M === undefined ? null : Number(payload.outputTokenPricePer1M),
+              cacheReadTokenPricePer1M: payload.cacheReadTokenPricePer1M === null || payload.cacheReadTokenPricePer1M === undefined ? null : Number(payload.cacheReadTokenPricePer1M),
+              cacheWriteTokenPricePer1M: payload.cacheWriteTokenPricePer1M === null || payload.cacheWriteTokenPricePer1M === undefined ? null : Number(payload.cacheWriteTokenPricePer1M),
               updatedAt: '2026-05-02T09:00:00.000Z',
             }
           : {
@@ -397,5 +426,161 @@ export async function mockAdminModelConnectorEndpoints(page: Page) {
     }
 
     await fulfillJson(route, ok(connectors.find((item) => item.id === 'connector-default-azure-openai')))
+  })
+
+  await page.route('**/api/admin/tenants/tenant-default/model-usage/overview?*', async (route) => {
+    await fulfillJson(route, ok({
+        range: '24h',
+        rangeStartUtc: '2026-05-01T00:00:00.000Z',
+        rangeEndUtc: '2026-05-02T00:00:00.000Z',
+        totalRequests: 18,
+        inputTokens: 12450,
+        outputTokens: 4380,
+        cacheReadTokens: 1500,
+        cacheWriteTokens: 420,
+        totalTokens: 18750,
+        totalCostUsd: 0.1542,
+        hasUnpricedRequests: false,
+        modelCount: 3,
+        requestsPerMinute: 0.75,
+        tokensPerMinute: 781.25,
+      }))
+  })
+
+  await page.route('**/api/admin/tenants/tenant-default/model-usage/charts?*', async (route) => {
+    const labels = ['05-01 00:00', '05-01 04:00', '05-01 08:00', '05-01 12:00', '05-01 16:00', '05-01 20:00']
+    await fulfillJson(route, ok({
+        requestCostBuckets: labels.map((label, index) => ({
+          bucketStartUtc: `2026-05-01T${String(index * 4).padStart(2, '0')}:00:00.000Z`,
+          label,
+          requestCount: [1, 2, 4, 5, 3, 3][index],
+          inputTokens: [240, 880, 2480, 3560, 2100, 3190][index],
+          outputTokens: [80, 210, 640, 1020, 520, 910][index],
+          cacheReadTokens: [0, 0, 200, 400, 300, 600][index],
+          cacheWriteTokens: [0, 0, 50, 120, 100, 150][index],
+          totalTokens: [320, 1090, 3320, 4700, 2920, 4850][index],
+          totalCostUsd: [0.004, 0.009, 0.028, 0.043, 0.026, 0.044][index],
+          hasUnpricedRequests: false,
+        })),
+        tokenBuckets: labels.map((label, index) => ({
+          bucketStartUtc: `2026-05-01T${String(index * 4).padStart(2, '0')}:00:00.000Z`,
+          label,
+          requestCount: [1, 2, 4, 5, 3, 3][index],
+          inputTokens: [240, 880, 2480, 3560, 2100, 3190][index],
+          outputTokens: [80, 210, 640, 1020, 520, 910][index],
+          cacheReadTokens: [0, 0, 200, 400, 300, 600][index],
+          cacheWriteTokens: [0, 0, 50, 120, 100, 150][index],
+          totalTokens: [320, 1090, 3320, 4700, 2920, 4850][index],
+          totalCostUsd: [0.004, 0.009, 0.028, 0.043, 0.026, 0.044][index],
+          hasUnpricedRequests: false,
+        })),
+        modelCostSeries: [
+          {
+            modelId: 'gpt-4.1',
+            label: 'gpt-4.1 via Azure OpenAI',
+            points: labels.map((label, index) => ({
+              bucketStartUtc: `2026-05-01T${String(index * 4).padStart(2, '0')}:00:00.000Z`,
+              label,
+              value: [0.002, 0.006, 0.018, 0.025, 0.014, 0.022][index],
+            })),
+          },
+          {
+            modelId: 'gpt-5-codex',
+            label: 'gpt-5-codex via OpenAI/Codex',
+            points: labels.map((label, index) => ({
+              bucketStartUtc: `2026-05-01T${String(index * 4).padStart(2, '0')}:00:00.000Z`,
+              label,
+              value: [0.001, 0.002, 0.008, 0.011, 0.009, 0.013][index],
+            })),
+          },
+        ],
+        modelRequestSeries: [
+          {
+            modelId: 'gpt-4.1',
+            label: 'gpt-4.1 via Azure OpenAI',
+            points: labels.map((label, index) => ({
+              bucketStartUtc: `2026-05-01T${String(index * 4).padStart(2, '0')}:00:00.000Z`,
+              label,
+              value: [1, 1, 2, 3, 2, 2][index],
+            })),
+          },
+          {
+            modelId: 'gpt-5-codex',
+            label: 'gpt-5-codex via OpenAI/Codex',
+            points: labels.map((label, index) => ({
+              bucketStartUtc: `2026-05-01T${String(index * 4).padStart(2, '0')}:00:00.000Z`,
+              label,
+              value: [0, 1, 2, 2, 1, 1][index],
+            })),
+          },
+        ],
+      }))
+  })
+
+  await page.route('**/api/admin/tenants/tenant-default/model-request-logs?*', async (route) => {
+    await fulfillJson(route, ok({
+        page: 1,
+        pageSize: 20,
+        totalCount: 2,
+        items: [
+          {
+            id: 'log-1',
+            requestTimeUtc: '2026-05-01T12:12:00.000Z',
+            threadId: 'thread-1',
+            conversationMessageId: 'message-1',
+            connectorId: 'connector-default-azure-openai',
+            connectorDisplayName: 'Azure OpenAI',
+            providerPreset: 'azure-openai',
+            protocol: 'AzureOpenAI',
+            modelId: 'gpt-4.1',
+            requestType: 'NutritionAgent',
+            status: 'Succeeded',
+            userAgent: 'Playwright',
+            requestSummary: 'High protein lunch recommendation',
+            toolEventsSummary: 'subagent:nutrition',
+            durationMs: 1240,
+            inputTokens: 880,
+            outputTokens: 210,
+            cacheReadTokens: 0,
+            cacheWriteTokens: 0,
+            totalTokens: 1090,
+            costUsd: 0.009,
+            errorCode: null,
+            errorMessage: null,
+          },
+          {
+            id: 'log-2',
+            requestTimeUtc: '2026-05-01T16:35:00.000Z',
+            threadId: 'thread-1',
+            conversationMessageId: 'message-2',
+            connectorId: 'connector-default-azure-openai',
+            connectorDisplayName: 'Azure OpenAI',
+            providerPreset: 'azure-openai',
+            protocol: 'AzureOpenAI',
+            modelId: 'gpt-4.1',
+            requestType: 'WorkoutAgent',
+            status: 'Failed',
+            userAgent: 'Playwright',
+            requestSummary: 'Deload plan refresh',
+            toolEventsSummary: 'subagent:workout',
+            durationMs: 900,
+            inputTokens: 640,
+            outputTokens: null,
+            cacheReadTokens: null,
+            cacheWriteTokens: null,
+            totalTokens: null,
+            costUsd: null,
+            errorCode: 'TimeoutException',
+            errorMessage: 'The upstream model request timed out.',
+          },
+        ],
+      }))
+  })
+
+  await page.route('**/api/admin/tenants/tenant-default/model-request-logs/cleanup', async (route) => {
+    await fulfillJson(route, ok({
+        deletedCount: 4,
+        cutoffUtc: '2026-02-01T00:00:00.000Z',
+      }))
   })
 }

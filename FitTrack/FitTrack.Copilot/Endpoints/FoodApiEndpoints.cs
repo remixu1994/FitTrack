@@ -54,8 +54,17 @@ public static class FoodApiEndpoints
         .Produces(StatusCodes.Status401Unauthorized)
         .Produces(StatusCodes.Status403Forbidden);
 
-        group.MapPost("/foods/analyze", async (HttpContext httpContext, AnalyzeFoodRequest request, IFoodAiService foodAiService, CancellationToken ct) =>
+        group.MapPost("/foods/analyze", async (HttpContext httpContext, AnalyzeFoodRequest request, IFoodAiService foodAiService, IModelRequestContextAccessor requestContextAccessor, CancellationToken ct) =>
         {
+            using var _ = requestContextAccessor.BeginScope(context =>
+            {
+                context.UserId = httpContext.User.GetRequiredUserId();
+                context.RequestType = Data.ModelRequestType.Chat;
+                context.UserAgent = httpContext.Request.Headers.UserAgent.ToString();
+                context.ClientIpHash = ModelRequestContext.HashClientIp(httpContext.Connection.RemoteIpAddress?.ToString());
+                context.RequestSummary = BuildAnalyzeSummary(request.Text, request.ImageDataUrl);
+            });
+
             var result = await foodAiService.AnalyzeAsync(new FoodRequest
             {
                 Text = request.Text,
@@ -71,5 +80,31 @@ public static class FoodApiEndpoints
         .Produces(StatusCodes.Status403Forbidden);
 
         return app;
+    }
+
+    private static string BuildAnalyzeSummary(string? text, string? imageDataUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(imageDataUrl) && !string.IsNullOrWhiteSpace(text))
+        {
+            return $"food analyze mixed: {Truncate(text)}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(imageDataUrl))
+        {
+            return "food analyze image";
+        }
+
+        return $"food analyze text: {Truncate(text)}";
+    }
+
+    private static string Truncate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var normalized = value.Trim().Replace("\r", " ").Replace("\n", " ");
+        return normalized.Length <= 160 ? normalized : normalized[..160];
     }
 }

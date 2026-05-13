@@ -56,6 +56,10 @@ internal static class Mappers
             connector.IsDefault,
             connector.IsEnabled,
             !string.IsNullOrWhiteSpace(connector.EncryptedApiKey),
+            connector.InputTokenPricePer1M,
+            connector.OutputTokenPricePer1M,
+            connector.CacheReadTokenPricePer1M,
+            connector.CacheWriteTokenPricePer1M,
             connector.CreatedAt,
             connector.UpdatedAt);
 

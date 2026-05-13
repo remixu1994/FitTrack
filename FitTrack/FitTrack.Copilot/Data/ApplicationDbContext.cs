@@ -8,6 +8,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 {
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<TenantModelConnector> TenantModelConnectors { get; set; }
+    public DbSet<ModelRequestLog> ModelRequestLogs { get; set; }
     public DbSet<UserProfile> UserProfiles { get; set; }
     public DbSet<ConversationThread> ConversationThreads { get; set; }
     public DbSet<ConversationMessage> ConversationMessages { get; set; }
@@ -61,6 +62,31 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany(e => e.ModelConnectors)
                 .HasForeignKey(e => e.TenantId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ModelRequestLog>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TenantId).IsRequired();
+            entity.Property(e => e.UserId).IsRequired();
+            entity.Property(e => e.ConnectorId).IsRequired();
+            entity.Property(e => e.ConnectorDisplayName).IsRequired().HasMaxLength(160);
+            entity.Property(e => e.ProviderPreset).IsRequired().HasMaxLength(80);
+            entity.Property(e => e.Protocol).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.ModelId).IsRequired().HasMaxLength(160);
+            entity.Property(e => e.RequestType).HasConversion<string>().HasMaxLength(48);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(32);
+            entity.Property(e => e.ThreadId).HasMaxLength(64);
+            entity.Property(e => e.ConversationMessageId).HasMaxLength(64);
+            entity.Property(e => e.UserAgent).HasMaxLength(512);
+            entity.Property(e => e.ClientIpHash).HasMaxLength(128);
+            entity.Property(e => e.ErrorCode).HasMaxLength(128);
+            entity.Property(e => e.ErrorMessage).HasMaxLength(1024);
+            entity.Property(e => e.ToolEventsSummary).HasMaxLength(1024);
+            entity.Property(e => e.RequestSummary).HasMaxLength(512);
+            entity.HasIndex(e => new { e.TenantId, e.StartedAtUtc });
+            entity.HasIndex(e => new { e.TenantId, e.ConnectorId, e.StartedAtUtc });
+            entity.HasIndex(e => new { e.TenantId, e.Status, e.StartedAtUtc });
         });
 
         modelBuilder.Entity<UserProfile>(entity =>

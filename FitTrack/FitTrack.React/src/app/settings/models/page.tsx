@@ -22,6 +22,10 @@ type ConnectorFormState = {
   baseUrl: string
   modelId: string
   apiKey: string
+  inputTokenPricePer1M: string
+  outputTokenPricePer1M: string
+  cacheReadTokenPricePer1M: string
+  cacheWriteTokenPricePer1M: string
   isDefault: boolean
   isEnabled: boolean
 }
@@ -141,6 +145,9 @@ export default function ModelSettingsPage() {
                     <p className="mt-1 text-xs text-slate-400">
                       {connector.protocol} · {connector.modelId}
                     </p>
+                    <p className="mt-2 text-xs text-slate-500">
+                      In ${formatPrice(connector.inputTokenPricePer1M)}/1M | Out ${formatPrice(connector.outputTokenPricePer1M)}/1M
+                    </p>
                   </div>
                   <div className="text-right text-[11px] uppercase tracking-[0.25em] text-slate-400">
                     {connector.isDefault ? <p>Default</p> : null}
@@ -192,6 +199,10 @@ export default function ModelSettingsPage() {
                   baseUrl: form.baseUrl.trim(),
                   modelId: form.modelId.trim(),
                   apiKey: form.apiKey.trim() || null,
+                  inputTokenPricePer1M: parseNullableNumber(form.inputTokenPricePer1M),
+                  outputTokenPricePer1M: parseNullableNumber(form.outputTokenPricePer1M),
+                  cacheReadTokenPricePer1M: parseNullableNumber(form.cacheReadTokenPricePer1M),
+                  cacheWriteTokenPricePer1M: parseNullableNumber(form.cacheWriteTokenPricePer1M),
                   isDefault: form.isDefault,
                   isEnabled: form.isEnabled,
                 }
@@ -299,6 +310,58 @@ export default function ModelSettingsPage() {
               </p>
             </label>
 
+            <label>
+              <span className="mb-2 block text-xs uppercase tracking-[0.3em] text-slate-400">Input price / 1M</span>
+              <input
+                type="number"
+                min="0"
+                step="0.000001"
+                value={form.inputTokenPricePer1M}
+                onChange={(event) => setForm((current) => ({ ...current, inputTokenPricePer1M: event.target.value }))}
+                placeholder="0.150000"
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-300"
+              />
+            </label>
+
+            <label>
+              <span className="mb-2 block text-xs uppercase tracking-[0.3em] text-slate-400">Output price / 1M</span>
+              <input
+                type="number"
+                min="0"
+                step="0.000001"
+                value={form.outputTokenPricePer1M}
+                onChange={(event) => setForm((current) => ({ ...current, outputTokenPricePer1M: event.target.value }))}
+                placeholder="0.600000"
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-300"
+              />
+            </label>
+
+            <label>
+              <span className="mb-2 block text-xs uppercase tracking-[0.3em] text-slate-400">Cache read / 1M</span>
+              <input
+                type="number"
+                min="0"
+                step="0.000001"
+                value={form.cacheReadTokenPricePer1M}
+                onChange={(event) => setForm((current) => ({ ...current, cacheReadTokenPricePer1M: event.target.value }))}
+                placeholder="Optional"
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-300"
+              />
+            </label>
+
+            <label>
+              <span className="mb-2 block text-xs uppercase tracking-[0.3em] text-slate-400">Cache write / 1M</span>
+              <input
+                type="number"
+                min="0"
+                step="0.000001"
+                value={form.cacheWriteTokenPricePer1M}
+                onChange={(event) => setForm((current) => ({ ...current, cacheWriteTokenPricePer1M: event.target.value }))}
+                placeholder="Optional"
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-300"
+              />
+            </label>
+
             <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
               <input
                 type="checkbox"
@@ -398,6 +461,10 @@ function buildInitialForm(presets: TenantModelConnectorPreset[]): ConnectorFormS
     baseUrl: preset?.baseUrl ?? '',
     modelId: preset?.modelId ?? '',
     apiKey: '',
+    inputTokenPricePer1M: '',
+    outputTokenPricePer1M: '',
+    cacheReadTokenPricePer1M: '',
+    cacheWriteTokenPricePer1M: '',
     isDefault: false,
     isEnabled: true,
   }
@@ -412,7 +479,28 @@ function toEditForm(connector: TenantModelConnectorAdmin): ConnectorFormState {
     baseUrl: connector.baseUrl,
     modelId: connector.modelId,
     apiKey: '',
+    inputTokenPricePer1M: toNumberInput(connector.inputTokenPricePer1M),
+    outputTokenPricePer1M: toNumberInput(connector.outputTokenPricePer1M),
+    cacheReadTokenPricePer1M: toNumberInput(connector.cacheReadTokenPricePer1M),
+    cacheWriteTokenPricePer1M: toNumberInput(connector.cacheWriteTokenPricePer1M),
     isDefault: connector.isDefault,
     isEnabled: connector.isEnabled,
   }
+}
+
+function parseNullableNumber(value: string) {
+  if (!value.trim()) {
+    return null
+  }
+
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function toNumberInput(value?: number | null) {
+  return value === null || value === undefined ? '' : String(value)
+}
+
+function formatPrice(value?: number | null) {
+  return value === null || value === undefined ? '--' : value.toFixed(6)
 }

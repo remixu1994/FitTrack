@@ -122,6 +122,17 @@ public static class ChatEndpoints
         try
         {
             AgentExecutionResult? agentResponse = null;
+            using var _ = httpContext.RequestServices.GetRequiredService<IModelRequestContextAccessor>().BeginScope(context =>
+            {
+                context.UserId = userId;
+                context.ThreadId = request.ThreadId;
+                context.ConversationMessageId = userMessage.Id;
+                context.RequestType = Data.ModelRequestType.Chat;
+                context.UserAgent = httpContext.Request.Headers.UserAgent.ToString();
+                context.ClientIpHash = ModelRequestContext.HashClientIp(httpContext.Connection.RemoteIpAddress?.ToString());
+                context.RequestSummary = BuildRequestSummary(userKind, userText);
+            });
+
             await foreach (var update in coachChatService.SendStreamingAsync(
                                userId,
                                request.ThreadId,
@@ -176,5 +187,23 @@ public static class ChatEndpoints
     {
         await context.Response.WriteAsync(JsonSerializer.Serialize(payload, JsonOptions) + "\n", ct);
         await context.Response.Body.FlushAsync(ct);
+    }
+
+    private static string BuildRequestSummary(string kind, string? text)
+    {
+        var prefix = kind switch
+        {
+            "meal_photo" => "vision meal photo",
+            "multimodal" => "multimodal meal chat",
+            _ => "chat"
+        };
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return prefix;
+        }
+
+        var normalized = text.Trim().Replace("\r", " ").Replace("\n", " ");
+        return normalized.Length <= 200 ? $"{prefix}: {normalized}" : $"{prefix}: {normalized[..200]}";
     }
 }

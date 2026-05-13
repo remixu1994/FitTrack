@@ -13,11 +13,13 @@ public sealed class VisionFoodRecognitionPlugin
 {
     private readonly IAIChatClientFactory _chatClientFactory;
     private readonly PromptLoader _prompts;
+    private readonly IModelRequestContextAccessor _requestContextAccessor;
 
-    public VisionFoodRecognitionPlugin(IAIChatClientFactory chatClientFactory, PromptLoader prompts)
+    public VisionFoodRecognitionPlugin(IAIChatClientFactory chatClientFactory, PromptLoader prompts, IModelRequestContextAccessor requestContextAccessor)
     {
         _chatClientFactory = chatClientFactory;
         _prompts = prompts;
+        _requestContextAccessor = requestContextAccessor;
     }
 
     /// <summary>
@@ -35,6 +37,14 @@ public sealed class VisionFoodRecognitionPlugin
             MaxOutputTokens = 800,
             ResponseFormat = ChatResponseFormat.Json
         };
+
+        using var _ = _requestContextAccessor.BeginScope(context =>
+        {
+            context.UserId = userId;
+            context.RequestType = Data.ModelRequestType.VisionRecognition;
+            context.RequestSummary = BuildSummary(input.Hint, "vision meal photo");
+            context.ToolEvents = ["plugin:vision-food-recognition"];
+        });
 
         var response = await chatClient.GetResponseAsync(messages, options, ct);
         var foodItems = ParseFoodItems(response.Text);
@@ -104,5 +114,16 @@ public sealed class VisionFoodRecognitionPlugin
     private sealed class FoodItemsWrapper
     {
         public List<FoodItem> Items { get; set; } = [];
+    }
+
+    private static string BuildSummary(string? hint, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(hint))
+        {
+            return fallback;
+        }
+
+        var normalized = hint.Trim().Replace("\r", " ").Replace("\n", " ");
+        return normalized.Length <= 200 ? normalized : normalized[..200];
     }
 }

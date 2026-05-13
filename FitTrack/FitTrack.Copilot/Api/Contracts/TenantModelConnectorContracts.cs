@@ -26,6 +26,10 @@ public record TenantModelConnectorAdminDto(
     bool IsDefault,
     bool IsEnabled,
     bool HasApiKey,
+    double? InputTokenPricePer1M,
+    double? OutputTokenPricePer1M,
+    double? CacheReadTokenPricePer1M,
+    double? CacheWriteTokenPricePer1M,
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
@@ -44,5 +48,9 @@ public record UpsertTenantModelConnectorRequest(
     string BaseUrl,
     string ModelId,
     string? ApiKey,
+    double? InputTokenPricePer1M,
+    double? OutputTokenPricePer1M,
+    double? CacheReadTokenPricePer1M,
+    double? CacheWriteTokenPricePer1M,
     bool IsDefault,
     bool IsEnabled);

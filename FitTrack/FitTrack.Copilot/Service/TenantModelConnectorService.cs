@@ -60,6 +60,10 @@ public sealed class TenantModelConnectorService : ITenantModelConnectorService
             Protocol = normalized.Protocol,
             BaseUrl = normalized.BaseUrl,
             ModelId = normalized.ModelId,
+            InputTokenPricePer1M = normalized.InputTokenPricePer1M,
+            OutputTokenPricePer1M = normalized.OutputTokenPricePer1M,
+            CacheReadTokenPricePer1M = normalized.CacheReadTokenPricePer1M,
+            CacheWriteTokenPricePer1M = normalized.CacheWriteTokenPricePer1M,
             IsDefault = false,
             IsEnabled = normalized.IsEnabled,
             EncryptedApiKey = string.IsNullOrWhiteSpace(normalized.ApiKey)
@@ -93,6 +97,10 @@ public sealed class TenantModelConnectorService : ITenantModelConnectorService
         connector.Protocol = normalized.Protocol;
         connector.BaseUrl = normalized.BaseUrl;
         connector.ModelId = normalized.ModelId;
+        connector.InputTokenPricePer1M = normalized.InputTokenPricePer1M;
+        connector.OutputTokenPricePer1M = normalized.OutputTokenPricePer1M;
+        connector.CacheReadTokenPricePer1M = normalized.CacheReadTokenPricePer1M;
+        connector.CacheWriteTokenPricePer1M = normalized.CacheWriteTokenPricePer1M;
         connector.IsEnabled = normalized.IsEnabled;
         connector.UpdatedAt = DateTime.UtcNow;
 
@@ -299,6 +307,11 @@ public sealed class TenantModelConnectorService : ITenantModelConnectorService
             throw new TenantModelConnectorValidationException("DEFAULT_CONNECTOR_DISABLED", "A default connector must be enabled.");
         }
 
+        ValidatePrice(request.InputTokenPricePer1M, nameof(request.InputTokenPricePer1M));
+        ValidatePrice(request.OutputTokenPricePer1M, nameof(request.OutputTokenPricePer1M));
+        ValidatePrice(request.CacheReadTokenPricePer1M, nameof(request.CacheReadTokenPricePer1M));
+        ValidatePrice(request.CacheWriteTokenPricePer1M, nameof(request.CacheWriteTokenPricePer1M));
+
         return new NormalizedConnectorRequest(
             request.DisplayName.Trim(),
             preset.Key,
@@ -306,8 +319,25 @@ public sealed class TenantModelConnectorService : ITenantModelConnectorService
             request.BaseUrl.Trim().TrimEnd('/'),
             request.ModelId.Trim(),
             string.IsNullOrWhiteSpace(request.ApiKey) ? null : request.ApiKey.Trim(),
+            request.InputTokenPricePer1M,
+            request.OutputTokenPricePer1M,
+            request.CacheReadTokenPricePer1M,
+            request.CacheWriteTokenPricePer1M,
             request.IsDefault,
             request.IsEnabled);
+    }
+
+    private static void ValidatePrice(double? value, string fieldName)
+    {
+        if (!value.HasValue)
+        {
+            return;
+        }
+
+        if (double.IsNaN(value.Value) || double.IsInfinity(value.Value) || value.Value < 0)
+        {
+            throw new TenantModelConnectorValidationException("INVALID_CONNECTOR_PRICE", $"{fieldName} must be a non-negative number.");
+        }
     }
 
     private sealed record NormalizedConnectorRequest(
@@ -317,6 +347,10 @@ public sealed class TenantModelConnectorService : ITenantModelConnectorService
         string BaseUrl,
         string ModelId,
         string? ApiKey,
+        double? InputTokenPricePer1M,
+        double? OutputTokenPricePer1M,
+        double? CacheReadTokenPricePer1M,
+        double? CacheWriteTokenPricePer1M,
         bool IsDefault,
         bool IsEnabled);
 }

@@ -30,7 +30,7 @@ export function AppShell({ title, children, hideHeader = false, immersive = fals
   const [user, setUser] = useState<AuthenticatedUser | null>(null)
   const [ready, setReady] = useState(false)
   const navItems = user?.roles.includes('Admin')
-    ? [...baseNavItems, { href: '/settings/models', label: 'Models' }]
+    ? [...baseNavItems, { href: '/settings/models', label: 'Models' }, { href: '/settings/model-usage', label: 'Usage' }]
     : baseNavItems
 
   useEffect(() => {

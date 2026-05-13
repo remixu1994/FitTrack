@@ -11,15 +11,17 @@ namespace FitTrack.Copilot.Agents;
 public class WorkoutAgent : IStreamingSubAgent
 {
     private readonly IWorkoutTools _workoutTools;
+    private readonly IModelRequestContextAccessor _requestContextAccessor;
     private readonly AIAgent _agent;
 
     public string Name => "workout";
 
     public AIAgent Agent => _agent;
 
-    public WorkoutAgent(IChatClient chatClient, IWorkoutTools workoutTools)
+    public WorkoutAgent(IChatClient chatClient, IWorkoutTools workoutTools, IModelRequestContextAccessor requestContextAccessor)
     {
         _workoutTools = workoutTools;
+        _requestContextAccessor = requestContextAccessor;
         _agent = chatClient.AsAIAgent(
             "workout-agent",
             "FitTrack workout expert",
@@ -56,6 +58,14 @@ public class WorkoutAgent : IStreamingSubAgent
         yield return CoachStreamEvent.ToolEvent("subagent:workout");
 
         var responseText = new StringBuilder();
+        using var _ = _requestContextAccessor.BeginScope(context =>
+        {
+            context.UserId = userId;
+            context.RequestType = ModelRequestType.WorkoutAgent;
+            context.RequestSummary = BuildSummary(prompt, "workout plan");
+            context.ToolEvents = ["subagent:workout"];
+        });
+
         await foreach (var update in _agent.RunStreamingAsync(
                            new[]
                            {
@@ -117,4 +127,15 @@ public class WorkoutAgent : IStreamingSubAgent
 
     private static string RemoveUserIdPrefix(string prompt)
         => string.Join('\n', prompt.Split('\n').Where(line => !line.StartsWith("UserId:", StringComparison.OrdinalIgnoreCase)));
+
+    private static string BuildSummary(string prompt, string fallback)
+    {
+        var normalized = RemoveUserIdPrefix(prompt).Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return fallback;
+        }
+
+        return normalized.Length <= 200 ? normalized : normalized[..200];
+    }
 }

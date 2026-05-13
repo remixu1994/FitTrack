@@ -11,15 +11,17 @@ namespace FitTrack.Copilot.Agents;
 public class NutritionAgent : IStreamingSubAgent
 {
     private readonly INutritionTools _nutritionTools;
+    private readonly IModelRequestContextAccessor _requestContextAccessor;
     private readonly AIAgent _agent;
 
     public string Name => "nutrition";
 
     public AIAgent Agent => _agent;
 
-    public NutritionAgent(IChatClient chatClient, INutritionTools nutritionTools)
+    public NutritionAgent(IChatClient chatClient, INutritionTools nutritionTools, IModelRequestContextAccessor requestContextAccessor)
     {
         _nutritionTools = nutritionTools;
+        _requestContextAccessor = requestContextAccessor;
         _agent = chatClient.AsAIAgent(
             "nutrition-agent",
             "FitTrack nutrition expert",
@@ -56,6 +58,14 @@ public class NutritionAgent : IStreamingSubAgent
         yield return CoachStreamEvent.ToolEvent("subagent:nutrition");
 
         var responseText = new StringBuilder();
+        using var _ = _requestContextAccessor.BeginScope(context =>
+        {
+            context.UserId = userId;
+            context.RequestType = ModelRequestType.NutritionAgent;
+            context.RequestSummary = BuildSummary(prompt, "nutrition chat");
+            context.ToolEvents = ["subagent:nutrition"];
+        });
+
         await foreach (var update in _agent.RunStreamingAsync(
                            new[]
                            {
@@ -118,4 +128,15 @@ public class NutritionAgent : IStreamingSubAgent
 
     private static string RemoveUserIdPrefix(string prompt)
         => string.Join('\n', prompt.Split('\n').Where(line => !line.StartsWith("UserId:", StringComparison.OrdinalIgnoreCase)));
+
+    private static string BuildSummary(string prompt, string fallback)
+    {
+        var normalized = RemoveUserIdPrefix(prompt).Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return fallback;
+        }
+
+        return normalized.Length <= 200 ? normalized : normalized[..200];
+    }
 }

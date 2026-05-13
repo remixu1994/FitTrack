@@ -75,9 +75,7 @@ export default function ProfileSettingsPage() {
             defaultValue={profile?.preferredModelConnectorId ?? ''}
             options={connectors.map((connector) => ({
               value: connector.id,
-              label: connector.isDefault
-                ? `${connector.displayName} ${isChinese ? '（租户默认）' : '(Tenant default)'}`
-                : connector.displayName,
+              label: buildConnectorOptionLabel(connector, isChinese),
             }))}
             emptyLabel={isChinese ? '使用租户默认' : 'Use tenant default'}
           />
@@ -99,6 +97,22 @@ export default function ProfileSettingsPage() {
                 ? '选择一个当前租户允许使用的模型连接器，或留空以跟随租户默认配置。'
                 : 'Choose a tenant-approved model connector or leave this empty to follow the tenant default.'}
           </div>
+          {profile?.effectiveModelConnectorId ? (
+            <div className="md:col-span-2 rounded-[24px] border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm text-cyan-100">
+              {isChinese ? '当前实际生效模型：' : 'Current active connector: '}
+              <span className="font-semibold">{profile.effectiveModelConnectorDisplayName ?? profile.effectiveModelConnectorId}</span>
+              {profile.effectiveModelConnectorModelId ? ` · ${profile.effectiveModelConnectorModelId}` : ''}
+              {profile.effectiveModelConnectorIsTenantDefault
+                ? isChinese
+                  ? ' · 跟随租户默认'
+                  : ' · using tenant default'
+                : profile.preferredModelConnectorId
+                  ? isChinese
+                    ? ' · 来自你的个人选择'
+                    : ' · from your profile selection'
+                  : ''}
+            </div>
+          ) : null}
           <button
             disabled={saving || loading}
             className="md:col-span-2 mt-2 rounded-full bg-cyan-300 px-5 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-slate-950 disabled:opacity-60"
@@ -162,4 +176,23 @@ function toNullableString(value: FormDataEntryValue | null) {
   if (typeof value !== 'string') return null
   const trimmed = value.trim()
   return trimmed.length > 0 ? trimmed : null
+}
+
+function buildConnectorOptionLabel(connector: TenantModelConnectorOption, isChinese: boolean) {
+  const parts = [`${connector.displayName} · ${connector.modelId}`]
+
+  if (connector.isDefault) {
+    parts.push(isChinese ? '租户默认' : 'Tenant default')
+  }
+
+  if (connector.isCurrentUserActive) {
+    parts.push(isChinese ? '当前生效' : 'Active now')
+  }
+
+  parts.push(shortConnectorId(connector.id))
+  return parts.join(' · ')
+}
+
+function shortConnectorId(value: string) {
+  return value.length <= 18 ? value : `${value.slice(0, 8)}...${value.slice(-6)}`
 }

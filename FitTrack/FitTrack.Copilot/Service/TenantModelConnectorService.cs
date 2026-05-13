@@ -33,9 +33,10 @@ public sealed class TenantModelConnectorService : ITenantModelConnectorService
     public Task<IReadOnlyList<TenantModelConnectorPresetDto>> ListPresetsAsync(CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<TenantModelConnectorPresetDto>>(TenantModelConnectorPresetCatalog.All.Select(item => item.ToDto()).ToList());
 
-    public async Task<IReadOnlyList<TenantModelConnectorAdminDto>> ListTenantConnectorsAsync(string tenantId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<TenantModelConnectorAdminDto>> ListTenantConnectorsAsync(string tenantId, string? currentUserId = null, CancellationToken ct = default)
     {
         await EnsureTenantExistsAsync(tenantId, ct);
+        var activeConnectorId = await ResolveActiveConnectorIdAsync(currentUserId, ct);
 
         var connectors = await _dbContext.TenantModelConnectors
             .AsNoTracking()
@@ -44,10 +45,10 @@ public sealed class TenantModelConnectorService : ITenantModelConnectorService
             .ThenBy(item => item.DisplayName)
             .ToListAsync(ct);
 
-        return connectors.Select(item => item.ToAdminDto()).ToList();
+        return connectors.Select(item => item.ToAdminDto(item.Id == activeConnectorId)).ToList();
     }
 
-    public async Task<TenantModelConnectorAdminDto> CreateConnectorAsync(string tenantId, UpsertTenantModelConnectorRequest request, CancellationToken ct = default)
+    public async Task<TenantModelConnectorAdminDto> CreateConnectorAsync(string tenantId, UpsertTenantModelConnectorRequest request, string? currentUserId = null, CancellationToken ct = default)
     {
         await EnsureTenantExistsAsync(tenantId, ct);
         var normalized = Normalize(request);
@@ -79,10 +80,11 @@ public sealed class TenantModelConnectorService : ITenantModelConnectorService
             await SetDefaultInternalAsync(tenantId, connector.Id, ct);
         }
 
-        return connector.ToAdminDto();
+        var activeConnectorId = await ResolveActiveConnectorIdAsync(currentUserId, ct);
+        return connector.ToAdminDto(connector.Id == activeConnectorId);
     }
 
-    public async Task<TenantModelConnectorAdminDto> UpdateConnectorAsync(string tenantId, string connectorId, UpsertTenantModelConnectorRequest request, CancellationToken ct = default)
+    public async Task<TenantModelConnectorAdminDto> UpdateConnectorAsync(string tenantId, string connectorId, UpsertTenantModelConnectorRequest request, string? currentUserId = null, CancellationToken ct = default)
     {
         var connector = await GetTenantConnectorAsync(tenantId, connectorId, ct);
         var normalized = Normalize(request);
@@ -116,7 +118,8 @@ public sealed class TenantModelConnectorService : ITenantModelConnectorService
             await SetDefaultInternalAsync(tenantId, connector.Id, ct);
         }
 
-        return connector.ToAdminDto();
+        var activeConnectorId = await ResolveActiveConnectorIdAsync(currentUserId, ct);
+        return connector.ToAdminDto(connector.Id == activeConnectorId);
     }
 
     public async Task DeleteConnectorAsync(string tenantId, string connectorId, CancellationToken ct = default)
@@ -149,16 +152,18 @@ public sealed class TenantModelConnectorService : ITenantModelConnectorService
         await _dbContext.SaveChangesAsync(ct);
     }
 
-    public async Task<TenantModelConnectorAdminDto> SetDefaultConnectorAsync(string tenantId, string connectorId, CancellationToken ct = default)
+    public async Task<TenantModelConnectorAdminDto> SetDefaultConnectorAsync(string tenantId, string connectorId, string? currentUserId = null, CancellationToken ct = default)
     {
         var connector = await GetTenantConnectorAsync(tenantId, connectorId, ct);
         await SetDefaultInternalAsync(tenantId, connectorId, ct);
-        return connector.ToAdminDto();
+        var activeConnectorId = await ResolveActiveConnectorIdAsync(currentUserId, ct);
+        return connector.ToAdminDto(connector.Id == activeConnectorId);
     }
 
     public async Task<IReadOnlyList<TenantModelConnectorOptionDto>> ListAvailableConnectorsForUserAsync(string userId, CancellationToken ct = default)
     {
         var tenantId = await GetTenantIdForUserAsync(userId, ct);
+        var activeConnectorId = await ResolveActiveConnectorIdAsync(userId, ct);
         var connectors = await _dbContext.TenantModelConnectors
             .AsNoTracking()
             .Where(item => item.TenantId == tenantId && item.IsEnabled)
@@ -166,7 +171,7 @@ public sealed class TenantModelConnectorService : ITenantModelConnectorService
             .ThenBy(item => item.DisplayName)
             .ToListAsync(ct);
 
-        return connectors.Select(item => item.ToOptionDto()).ToList();
+        return connectors.Select(item => item.ToOptionDto(item.Id == activeConnectorId)).ToList();
     }
 
     public async Task<TenantModelConnector?> ResolveConnectorForUserAsync(string userId, CancellationToken ct = default)
@@ -353,4 +358,15 @@ public sealed class TenantModelConnectorService : ITenantModelConnectorService
         double? CacheWriteTokenPricePer1M,
         bool IsDefault,
         bool IsEnabled);
+
+    private async Task<string?> ResolveActiveConnectorIdAsync(string? userId, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return null;
+        }
+
+        var connector = await ResolveConnectorForUserAsync(userId, ct);
+        return connector?.Id;
+    }
 }

@@ -13,6 +13,11 @@ public record UserProfileDto(
     string? Goal,
     string? Preferences,
     string? PreferredModelConnectorId,
+    string? EffectiveModelConnectorId,
+    string? EffectiveModelConnectorDisplayName,
+    string? EffectiveModelConnectorModelId,
+    string? EffectiveModelConnectorProviderPreset,
+    bool EffectiveModelConnectorIsTenantDefault,
     DateTime CreatedAt,
     DateTime UpdatedAt);
 

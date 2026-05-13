@@ -24,11 +24,11 @@ public static class AdminTenantModelConnectorEndpoints
             return Results.Ok(new ApiResponse<IReadOnlyList<TenantModelConnectorPresetDto>>(true, presets));
         });
 
-        group.MapGet("/tenants/{tenantId}/model-connectors", async (string tenantId, ITenantModelConnectorService connectorService, CancellationToken ct) =>
+        group.MapGet("/tenants/{tenantId}/model-connectors", async (HttpContext httpContext, string tenantId, ITenantModelConnectorService connectorService, CancellationToken ct) =>
         {
             try
             {
-                var connectors = await connectorService.ListTenantConnectorsAsync(tenantId, ct);
+                var connectors = await connectorService.ListTenantConnectorsAsync(tenantId, httpContext.User.GetRequiredUserId(), ct);
                 return Results.Ok(new ApiResponse<IReadOnlyList<TenantModelConnectorAdminDto>>(true, connectors));
             }
             catch (TenantModelConnectorValidationException ex)
@@ -37,11 +37,11 @@ public static class AdminTenantModelConnectorEndpoints
             }
         });
 
-        group.MapPost("/tenants/{tenantId}/model-connectors", async (string tenantId, UpsertTenantModelConnectorRequest request, ITenantModelConnectorService connectorService, CancellationToken ct) =>
+        group.MapPost("/tenants/{tenantId}/model-connectors", async (HttpContext httpContext, string tenantId, UpsertTenantModelConnectorRequest request, ITenantModelConnectorService connectorService, CancellationToken ct) =>
         {
             try
             {
-                var connector = await connectorService.CreateConnectorAsync(tenantId, request, ct);
+                var connector = await connectorService.CreateConnectorAsync(tenantId, request, httpContext.User.GetRequiredUserId(), ct);
                 return Results.Ok(new ApiResponse<TenantModelConnectorAdminDto>(true, connector));
             }
             catch (TenantModelConnectorValidationException ex)
@@ -50,11 +50,11 @@ public static class AdminTenantModelConnectorEndpoints
             }
         });
 
-        group.MapPut("/tenants/{tenantId}/model-connectors/{connectorId}", async (string tenantId, string connectorId, UpsertTenantModelConnectorRequest request, ITenantModelConnectorService connectorService, CancellationToken ct) =>
+        group.MapPut("/tenants/{tenantId}/model-connectors/{connectorId}", async (HttpContext httpContext, string tenantId, string connectorId, UpsertTenantModelConnectorRequest request, ITenantModelConnectorService connectorService, CancellationToken ct) =>
         {
             try
             {
-                var connector = await connectorService.UpdateConnectorAsync(tenantId, connectorId, request, ct);
+                var connector = await connectorService.UpdateConnectorAsync(tenantId, connectorId, request, httpContext.User.GetRequiredUserId(), ct);
                 return Results.Ok(new ApiResponse<TenantModelConnectorAdminDto>(true, connector));
             }
             catch (TenantModelConnectorValidationException ex)
@@ -76,11 +76,11 @@ public static class AdminTenantModelConnectorEndpoints
             }
         });
 
-        group.MapPost("/tenants/{tenantId}/model-connectors/{connectorId}/default", async (string tenantId, string connectorId, ITenantModelConnectorService connectorService, CancellationToken ct) =>
+        group.MapPost("/tenants/{tenantId}/model-connectors/{connectorId}/default", async (HttpContext httpContext, string tenantId, string connectorId, ITenantModelConnectorService connectorService, CancellationToken ct) =>
         {
             try
             {
-                var connector = await connectorService.SetDefaultConnectorAsync(tenantId, connectorId, ct);
+                var connector = await connectorService.SetDefaultConnectorAsync(tenantId, connectorId, httpContext.User.GetRequiredUserId(), ct);
                 return Results.Ok(new ApiResponse<TenantModelConnectorAdminDto>(true, connector));
             }
             catch (TenantModelConnectorValidationException ex)

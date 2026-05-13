@@ -145,12 +145,14 @@ export default function ModelSettingsPage() {
                     <p className="mt-1 text-xs text-slate-400">
                       {connector.protocol} · {connector.modelId}
                     </p>
+                    <p className="mt-1 text-xs text-slate-500">{connector.id}</p>
                     <p className="mt-2 text-xs text-slate-500">
                       In ${formatPrice(connector.inputTokenPricePer1M)}/1M | Out ${formatPrice(connector.outputTokenPricePer1M)}/1M
                     </p>
                   </div>
                   <div className="text-right text-[11px] uppercase tracking-[0.25em] text-slate-400">
                     {connector.isDefault ? <p>Default</p> : null}
+                    {connector.isCurrentUserActive ? <p className="text-cyan-200">Active For You</p> : null}
                     <p>{connector.isEnabled ? 'Enabled' : 'Disabled'}</p>
                   </div>
                 </div>

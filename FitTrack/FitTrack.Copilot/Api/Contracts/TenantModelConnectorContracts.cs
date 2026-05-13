@@ -25,6 +25,7 @@ public record TenantModelConnectorAdminDto(
     string ModelId,
     bool IsDefault,
     bool IsEnabled,
+    bool IsCurrentUserActive,
     bool HasApiKey,
     double? InputTokenPricePer1M,
     double? OutputTokenPricePer1M,
@@ -39,7 +40,8 @@ public record TenantModelConnectorOptionDto(
     string ProviderPreset,
     string Protocol,
     string ModelId,
-    bool IsDefault);
+    bool IsDefault,
+    bool IsCurrentUserActive);
 
 public record UpsertTenantModelConnectorRequest(
     string DisplayName,

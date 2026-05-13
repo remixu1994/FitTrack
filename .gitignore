@@ -37,11 +37,19 @@ bin/
 # SQLite runtime files
 *.db-wal
 *.db-shm
+FitTrack/FitTrack.Copilot/Data/app.db
+
+# Local AI/tool config
+.claude/
 
 # Local frontend environment and caches
 FitTrack.Web/.env.local
 FitTrack.Web/.next/
 FitTrack.Web/node_modules/
+FitTrack/FitTrack.React/.env.local
+FitTrack/FitTrack.React/.next/
+FitTrack/FitTrack.React/.next-build-verify/
+FitTrack/FitTrack.React/node_modules/
 
 # Local attachment storage
 FitTrack/FitTrack.Copilot/Data/attachments/

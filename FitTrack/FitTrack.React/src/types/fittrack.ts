@@ -93,6 +93,11 @@ export type UserProfile = {
   goal?: string | null
   preferences?: string | null
   preferredModelConnectorId?: string | null
+  effectiveModelConnectorId?: string | null
+  effectiveModelConnectorDisplayName?: string | null
+  effectiveModelConnectorModelId?: string | null
+  effectiveModelConnectorProviderPreset?: string | null
+  effectiveModelConnectorIsTenantDefault: boolean
   createdAt: string
   updatedAt: string
 }
@@ -123,6 +128,7 @@ export type TenantModelConnectorOption = {
   protocol: TenantModelProtocol
   modelId: string
   isDefault: boolean
+  isCurrentUserActive: boolean
 }
 
 export type TenantModelConnectorAdmin = {
@@ -135,6 +141,7 @@ export type TenantModelConnectorAdmin = {
   modelId: string
   isDefault: boolean
   isEnabled: boolean
+  isCurrentUserActive: boolean
   hasApiKey: boolean
   inputTokenPricePer1M?: number | null
   outputTokenPricePer1M?: number | null

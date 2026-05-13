@@ -10,10 +10,12 @@ public static class ProfileEndpoints
     {
         var group = app.MapGroup("/api/profile").WithTags("Profile").RequireAuthorization();
 
-        group.MapGet("/", async (HttpContext httpContext, IProfileService profileService, CancellationToken ct) =>
+        group.MapGet("/", async (HttpContext httpContext, IProfileService profileService, ITenantModelConnectorService connectorService, CancellationToken ct) =>
         {
-            var profile = await profileService.GetOrCreateProfileAsync(httpContext.User.GetRequiredUserId(), httpContext.User.GetEmail(), ct);
-            return Results.Ok(new ApiResponse<UserProfileDto>(true, profile.ToDto()));
+            var userId = httpContext.User.GetRequiredUserId();
+            var profile = await profileService.GetOrCreateProfileAsync(userId, httpContext.User.GetEmail(), ct);
+            var effectiveConnector = await connectorService.ResolveConnectorForUserAsync(userId, ct);
+            return Results.Ok(new ApiResponse<UserProfileDto>(true, profile.ToDto(effectiveConnector)));
         });
 
         group.MapPut("/", async (HttpContext httpContext, UpsertUserProfileRequest request, IProfileService profileService, ITenantModelConnectorService connectorService, CancellationToken ct) =>
@@ -51,7 +53,8 @@ public static class ProfileEndpoints
                 httpContext.User.GetEmail(),
                 ct);
 
-            return Results.Ok(new ApiResponse<UserProfileDto>(true, profile.ToDto()));
+            var effectiveConnector = await connectorService.ResolveConnectorForUserAsync(userId, ct);
+            return Results.Ok(new ApiResponse<UserProfileDto>(true, profile.ToDto(effectiveConnector)));
         });
 
         return app;

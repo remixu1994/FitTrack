@@ -392,7 +392,20 @@ export function ChatView({ initialDraft = '' }: { initialDraft?: string }) {
             <div className="flex flex-wrap gap-2 text-xs uppercase tracking-[0.25em] text-slate-300">
               <MetricPill label={isChinese ? '消息' : 'Messages'} value={String(threadDetail?.messages.length ?? 0)} />
               <MetricPill label={isChinese ? '快照' : 'Snapshots'} value={String(threadDetail?.snapshots.length ?? 0)} />
-              <MetricPill label={isChinese ? '模型' : 'Model'} value={profile?.preferredModelConnectorId ? (isChinese ? '自定义模型' : 'Custom model') : isChinese ? '租户默认' : 'Tenant default'} />
+              <MetricPill
+                label={isChinese ? '模型' : 'Model'}
+                value={
+                  profile?.effectiveModelConnectorDisplayName
+                    ? `${profile.effectiveModelConnectorDisplayName}${profile.effectiveModelConnectorModelId ? ` · ${profile.effectiveModelConnectorModelId}` : ''}`
+                    : profile?.preferredModelConnectorId
+                      ? isChinese
+                        ? '自定义模型'
+                        : 'Custom model'
+                      : isChinese
+                        ? '租户默认'
+                        : 'Tenant default'
+                }
+              />
             </div>
           </div>
         </header>
@@ -883,7 +896,15 @@ function buildWelcomeCopy(profile: UserProfile | null, language: 'en' | 'zh-CN')
     chips: [
       goal ? (isChinese ? `目标 ${goal}` : `Goal ${goal}`) : isChinese ? '目标已就绪' : 'Goal ready',
       activityLevel ? (isChinese ? `活动 ${activityLevel}` : `Activity ${activityLevel}`) : isChinese ? '活动基线' : 'Activity baseline',
-      profile?.preferredModelConnectorId ? (isChinese ? '已选择自定义模型' : 'Custom model selected') : isChinese ? '租户默认模型' : 'Tenant default model',
+      profile?.effectiveModelConnectorDisplayName
+        ? isChinese
+          ? `当前 ${profile.effectiveModelConnectorDisplayName}`
+          : `Current ${profile.effectiveModelConnectorDisplayName}`
+        : profile?.preferredModelConnectorId
+          ? (isChinese ? '已选择自定义模型' : 'Custom model selected')
+          : isChinese
+            ? '租户默认模型'
+            : 'Tenant default model',
     ],
   }
 }

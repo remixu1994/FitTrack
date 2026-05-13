@@ -10,7 +10,7 @@ internal static class Mappers
     public static AuthenticatedUserDto ToDto(this ApplicationUser user, IEnumerable<string> roles, UserProfile? profile = null)
         => new(user.Id, user.Email ?? string.Empty, profile?.DisplayName ?? user.Profile?.DisplayName ?? user.UserName ?? user.Email, roles.ToArray());
 
-    public static UserProfileDto ToDto(this UserProfile profile)
+    public static UserProfileDto ToDto(this UserProfile profile, TenantModelConnector? effectiveConnector = null)
         => new(
             profile.Id,
             profile.UserId,
@@ -24,6 +24,11 @@ internal static class Mappers
             profile.Goal,
             profile.Preferences,
             profile.PreferredModelConnectorId,
+            effectiveConnector?.Id,
+            effectiveConnector?.DisplayName,
+            effectiveConnector?.ModelId,
+            effectiveConnector?.ProviderPreset,
+            effectiveConnector?.IsDefault ?? false,
             profile.CreatedAt,
             profile.UpdatedAt);
 
@@ -44,7 +49,7 @@ internal static class Mappers
             preset.BaseUrl,
             preset.ModelId);
 
-    public static TenantModelConnectorAdminDto ToAdminDto(this TenantModelConnector connector)
+    public static TenantModelConnectorAdminDto ToAdminDto(this TenantModelConnector connector, bool isCurrentUserActive = false)
         => new(
             connector.Id,
             connector.TenantId,
@@ -55,6 +60,7 @@ internal static class Mappers
             connector.ModelId,
             connector.IsDefault,
             connector.IsEnabled,
+            isCurrentUserActive,
             !string.IsNullOrWhiteSpace(connector.EncryptedApiKey),
             connector.InputTokenPricePer1M,
             connector.OutputTokenPricePer1M,
@@ -63,14 +69,15 @@ internal static class Mappers
             connector.CreatedAt,
             connector.UpdatedAt);
 
-    public static TenantModelConnectorOptionDto ToOptionDto(this TenantModelConnector connector)
+    public static TenantModelConnectorOptionDto ToOptionDto(this TenantModelConnector connector, bool isCurrentUserActive = false)
         => new(
             connector.Id,
             connector.DisplayName,
             connector.ProviderPreset,
             connector.Protocol.ToString(),
             connector.ModelId,
-            connector.IsDefault);
+            connector.IsDefault,
+            isCurrentUserActive);
 
     public static ConversationThreadDto ToDto(this ConversationThread thread)
         => new(thread.Id, thread.Title, thread.CreatedAt, thread.UpdatedAt, thread.ArchivedAt);

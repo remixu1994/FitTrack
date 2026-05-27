@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -9,9 +9,25 @@ import { getCurrentUser, logout, refreshSession } from '@/lib/http'
 import { useLanguage } from '@/components/providers/language-provider'
 import type { AuthenticatedUser } from '@/types/fittrack'
 
-const baseNavItems = [
+type NavItem = {
+  href: string
+  label: { en: string; zh: string }
+  children?: ReadonlyArray<{ href: string; label: { en: string; zh: string } }>
+}
+
+const baseNavItems: ReadonlyArray<NavItem> = [
   { href: '/today', label: { en: 'Today', zh: '今日' } },
   { href: '/chat', label: { en: 'Coach', zh: '教练' } },
+  {
+    href: '/calculators',
+    label: { en: 'Calculators', zh: '计算器' },
+    children: [
+      { href: '/calculators/bmi', label: { en: 'BMI', zh: 'BMI' } },
+      { href: '/calculators/calorie', label: { en: 'Calorie', zh: '热量' } },
+      { href: '/calculators/body-fat', label: { en: 'Body Fat', zh: '体脂' } },
+      { href: '/calculators/ideal-weight', label: { en: 'Ideal Weight', zh: '理想体重' } },
+    ],
+  },
   { href: '/food-records', label: { en: 'Food', zh: '饮食' } },
   { href: '/workouts', label: { en: 'Workouts', zh: '训练' } },
   { href: '/progress', label: { en: 'Progress', zh: '进度' } },
@@ -20,7 +36,7 @@ const baseNavItems = [
 
 type AppShellProps = {
   title: string
-  titleKey?: 'today' | 'chat' | 'food' | 'workouts' | 'progress' | 'profile' | 'models' | 'usage'
+  titleKey?: 'today' | 'chat' | 'calculators' | 'food' | 'workouts' | 'progress' | 'profile' | 'models' | 'usage'
   children: React.ReactNode
   hideHeader?: boolean
   immersive?: boolean
@@ -34,12 +50,18 @@ export function AppShell({ title, titleKey, children, hideHeader = false, immers
   const [user, setUser] = useState<AuthenticatedUser | null>(null)
   const [ready, setReady] = useState(false)
   const navItems = user?.roles.includes('Admin')
-    ? [...baseNavItems, { href: '/settings/models', label: { en: 'Models', zh: '模型' } }, { href: '/settings/model-usage', label: { en: 'Usage', zh: '用量' } }]
+    ? [
+        ...baseNavItems,
+        { href: '/settings/models', label: { en: 'Models', zh: '模型' } },
+        { href: '/settings/model-usage', label: { en: 'Usage', zh: '用量' } },
+      ]
     : baseNavItems
+
   const translatedTitle = titleKey
     ? {
         today: isChinese ? '今日' : 'Today',
         chat: isChinese ? '健身教练' : 'Fitness Coach',
+        calculators: isChinese ? '健康计算器' : 'Health Calculators',
         food: isChinese ? '饮食记录' : 'Food Records',
         workouts: isChinese ? '训练记录' : 'Workouts',
         progress: isChinese ? '进度' : 'Progress',
@@ -144,17 +166,39 @@ export function AppShell({ title, titleKey, children, hideHeader = false, immers
           </div>
           <nav className="mt-8 space-y-2">
             {navItems.map((item) => {
-              const active = pathname === item.href
+              const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
+
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`block rounded-2xl px-4 py-3 text-sm transition ${
-                    active ? 'bg-cyan-400/15 text-cyan-100' : 'text-slate-300 hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  {isChinese ? item.label.zh : item.label.en}
-                </Link>
+                <div key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={`block rounded-2xl px-4 py-3 text-sm transition ${
+                      active ? 'bg-cyan-400/15 text-cyan-100' : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    {isChinese ? item.label.zh : item.label.en}
+                  </Link>
+                  {item.children && active ? (
+                    <div className="mt-2 space-y-1 pl-3">
+                      {item.children.map((child) => {
+                        const childActive = pathname === child.href
+                        return (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            className={`block rounded-xl px-3 py-2 text-xs uppercase tracking-[0.18em] transition ${
+                              childActive
+                                ? 'bg-cyan-300/15 text-cyan-100'
+                                : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                            }`}
+                          >
+                            {isChinese ? child.label.zh : child.label.en}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  ) : null}
+                </div>
               )
             })}
           </nav>

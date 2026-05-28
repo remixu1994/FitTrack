@@ -3,7 +3,25 @@ param(
     [int]$CopilotPort = 5097,
 
     [ValidateSet('Backend', 'Frontend', 'None')]
-    [string]$FocusWindow = 'Backend'
+    [string]$FocusWindow = 'Backend',
+
+    [string]$AdminEmail = $env:FITTRACK_ADMIN_EMAIL,
+
+    [string]$AdminPassword = $env:FITTRACK_ADMIN_PASSWORD,
+
+    [switch]$ResetAdminPasswordOnStartup,
+
+    [string]$ModelPreset = $env:FITTRACK_MODEL_PRESET,
+
+    [string]$ModelApiKey = $env:FITTRACK_MODEL_API_KEY,
+
+    [string]$ModelEndpoint = $env:FITTRACK_MODEL_ENDPOINT,
+
+    [string]$ModelId = $env:FITTRACK_MODEL_ID,
+
+    [switch]$OverwriteModelConnectorFromEnvironment,
+
+    [string]$UsdaApiKey = $env:USDA_API_KEY
 )
 
 $ErrorActionPreference = 'Stop'
@@ -71,6 +89,34 @@ function Show-ProcessWindow {
     return $false
 }
 
+function Test-TruthyEnvironmentValue {
+    param(
+        [string]$Value
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return $false
+    }
+
+    return @('1', 'true', 'yes', 'y', 'on') -contains $Value.Trim().ToLowerInvariant()
+}
+
+function New-EnvironmentAssignment {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+
+        [string]$Value
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return $null
+    }
+
+    $literal = ConvertTo-SingleQuotedLiteral -Value $Value.Trim()
+    return "`$env:$Name = '$literal'"
+}
+
 $repoRoot = $PSScriptRoot
 $copilotDir = Join-Path $repoRoot 'FitTrack\FitTrack.Copilot'
 $copilotProject = Join-Path $copilotDir 'FitTrack.Copilot.csproj'
@@ -78,6 +124,21 @@ $frontendDir = Join-Path $repoRoot 'FitTrack\FitTrack.React'
 $frontendPackageJson = Join-Path $frontendDir 'package.json'
 $frontendNodeModules = Join-Path $frontendDir 'node_modules'
 $copilotBaseUrl = "http://localhost:$CopilotPort"
+
+if ([string]::IsNullOrWhiteSpace($AdminEmail)) {
+    $AdminEmail = 'admin@fittrack.local'
+}
+
+if ([string]::IsNullOrWhiteSpace($AdminPassword)) {
+    $AdminPassword = 'FitTrack123!'
+}
+
+if ([string]::IsNullOrWhiteSpace($ModelPreset)) {
+    $ModelPreset = 'mimo'
+}
+
+$resetAdminPassword = $ResetAdminPasswordOnStartup.IsPresent -or (Test-TruthyEnvironmentValue -Value $env:FITTRACK_ADMIN_RESET_PASSWORD_ON_STARTUP)
+$overwriteModelConnector = $OverwriteModelConnectorFromEnvironment.IsPresent -or (Test-TruthyEnvironmentValue -Value $env:FITTRACK_MODEL_OVERWRITE_FROM_ENVIRONMENT)
 
 Test-RequiredCommand -Name 'dotnet'
 Test-RequiredCommand -Name 'npm'
@@ -111,11 +172,26 @@ $frontendDirLiteral = ConvertTo-SingleQuotedLiteral -Value $frontendDir
 $copilotBaseUrlLiteral = ConvertTo-SingleQuotedLiteral -Value $copilotBaseUrl
 $copilotPortLiteral = ConvertTo-SingleQuotedLiteral -Value $CopilotPort.ToString()
 
+$backendEnvironmentAssignments = @(
+    New-EnvironmentAssignment -Name 'Admin__Email' -Value $AdminEmail
+    New-EnvironmentAssignment -Name 'Admin__Password' -Value $AdminPassword
+    New-EnvironmentAssignment -Name 'Admin__ResetPasswordOnStartup' -Value $resetAdminPassword.ToString().ToLowerInvariant()
+    New-EnvironmentAssignment -Name 'ModelConnector__DefaultPreset' -Value $ModelPreset
+    New-EnvironmentAssignment -Name 'ModelConnector__ApiKey' -Value $ModelApiKey
+    New-EnvironmentAssignment -Name 'ModelConnector__Endpoint' -Value $ModelEndpoint
+    New-EnvironmentAssignment -Name 'ModelConnector__ModelId' -Value $ModelId
+    New-EnvironmentAssignment -Name 'ModelConnector__OverwriteFromEnvironment' -Value $overwriteModelConnector.ToString().ToLowerInvariant()
+    New-EnvironmentAssignment -Name 'USDA__ApiKey' -Value $UsdaApiKey
+) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+$backendEnvironmentBlock = $backendEnvironmentAssignments -join "`r`n"
+
 $backendCommand = @"
 `$Host.UI.RawUI.WindowTitle = 'FitTrack.Copilot'
 `$env:DOTNET_ENVIRONMENT = 'Development'
 `$env:ASPNETCORE_ENVIRONMENT = 'Development'
 `$env:ASPNETCORE_URLS = '$copilotBaseUrlLiteral'
+$backendEnvironmentBlock
 Set-Location '$copilotDirLiteral'
 dotnet watch --project '$copilotProjectLiteral' run --no-launch-profile
 "@
@@ -153,6 +229,14 @@ Write-Host 'Launched FitTrack development services:' -ForegroundColor Green
 Write-Host "  FitTrack.Copilot (PID $($backendProcess.Id)): $copilotBaseUrl"
 Write-Host "  FitTrack.React   (PID $($frontendProcess.Id)): http://localhost:3000"
 Write-Host "  React API port env: NEXT_PUBLIC_COPILOT_PORT=$CopilotPort"
+Write-Host "  Admin email: $AdminEmail"
+Write-Host "  Admin password configured: $(-not [string]::IsNullOrWhiteSpace($AdminPassword))"
+Write-Host "  Reset admin password on startup: $resetAdminPassword"
+Write-Host "  Model connector preset: $ModelPreset"
+Write-Host "  Model connector endpoint: $(if ([string]::IsNullOrWhiteSpace($ModelEndpoint)) { 'from Copilot config' } else { $ModelEndpoint })"
+Write-Host "  Model connector model: $(if ([string]::IsNullOrWhiteSpace($ModelId)) { 'from Copilot config' } else { $ModelId })"
+Write-Host "  Model API key configured: $(-not [string]::IsNullOrWhiteSpace($ModelApiKey))"
+Write-Host "  Overwrite model connector from environment: $overwriteModelConnector"
 Write-Host "  Focused window: $FocusWindow"
 Write-Host ''
 Write-Host 'Stop each service by closing its PowerShell window or pressing Ctrl+C inside that window.' -ForegroundColor Cyan

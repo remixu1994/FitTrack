@@ -4,7 +4,7 @@ namespace FitTrack.Copilot.Service;
 
 public static class TenantModelConnectorPresetCatalog
 {
-    public const string XiaomiMimo = "xiaomi-mimo";
+    public const string Mimo = "xiaomi-mimo";
     public const string MiniMax = "minimax";
     public const string OpenAICodex = "openai-codex";
     public const string Qwen = "qwen";
@@ -13,7 +13,7 @@ public static class TenantModelConnectorPresetCatalog
     public const string AzureOpenAI = "azure-openai";
     public const string Anthropic = "anthropic";
 
-    public const string XiaomiMimoConnectorId = "connector-default-xiaomi-mimo";
+    public const string MimoConnectorId = "connector-default-xiaomi-mimo";
     public const string MiniMaxConnectorId = "connector-default-minimax";
     public const string OpenAICodexConnectorId = "connector-default-openai-codex";
     public const string QwenConnectorId = "connector-default-qwen";
@@ -25,14 +25,16 @@ public static class TenantModelConnectorPresetCatalog
     public static readonly IReadOnlyList<TenantModelConnectorPreset> All =
     [
         new(
-            XiaomiMimo,
-            "Xiaomi MiMo",
+            Mimo,
+            "Mimo",
             TenantModelProtocol.OpenAICompatible,
             "https://token-plan-cn.xiaomimimo.com/v1",
             "mimo-v2.5",
-            LegacyProvider: "Xiaomi",
-            ConfigurationSection: "Xiaomi",
-            SeedConnectorId: XiaomiMimoConnectorId),
+            LegacyProvider: "Mimo",
+            ConfigurationSection: "Mimo",
+            SeedConnectorId: MimoConnectorId,
+            ConfigurationSectionAliases: ["Xiaomi"],
+            LegacyProviderAliases: ["Xiaomi"]),
         new(
             MiniMax,
             "MiniMax",
@@ -90,7 +92,9 @@ public static class TenantModelConnectorPresetCatalog
 
     public static bool TryGet(string key, out TenantModelConnectorPreset preset)
     {
-        preset = All.FirstOrDefault(item => string.Equals(item.Key, key, StringComparison.OrdinalIgnoreCase))
+        preset = All.FirstOrDefault(item =>
+                string.Equals(item.Key, key, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(item.Key.Replace("xiaomi-", string.Empty), key.Trim(), StringComparison.OrdinalIgnoreCase))
             ?? null!;
         return preset is not null;
     }
@@ -107,8 +111,7 @@ public static class TenantModelConnectorPresetCatalog
             return null;
         }
 
-        return All.FirstOrDefault(item =>
-                string.Equals(item.LegacyProvider, legacyProvider.Trim(), StringComparison.OrdinalIgnoreCase))
+        return All.FirstOrDefault(item => item.MatchesLegacyProvider(legacyProvider.Trim()))
             ?.SeedConnectorId;
     }
 }

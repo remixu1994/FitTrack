@@ -1,0 +1,58 @@
+services:
+  fittrack-copilot:
+    image: ghcr.io/remixu1994/fittrack-copilot:main
+    container_name: fittrack-copilot
+    restart: unless-stopped
+    user: "0:0"
+    ports:
+      - "5097:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Data Source=/data/app.db;Cache=Shared
+      Frontend__BaseUrl: http://${FITTRACK_PUBLIC_HOST:-192.168.31.13}:3000
+      Cors__AllowedOrigins__0: http://${FITTRACK_PUBLIC_HOST:-192.168.31.13}:3000
+      Cors__AllowedOrigins__1: http://localhost:3000
+      Cors__AllowedOrigins__2: http://127.0.0.1:3000
+      Jwt__Issuer: FitTrack.Copilot
+      Jwt__Audience: FitTrack.React
+      Jwt__SigningKey: ${FITTRACK_JWT_SIGNING_KEY:-ChangeThisComposeSigningKeyForFitTrack123!}
+      Jwt__AccessTokenMinutes: 30
+      Jwt__RefreshTokenDays: 14
+      Jwt__RefreshCookieName: fittrack_rt
+      Admin__Email: ${FITTRACK_ADMIN_EMAIL:-admin@fittrack.local}
+      Admin__Password: ${FITTRACK_ADMIN_PASSWORD:-FitTrack123!}
+      Admin__ResetPasswordOnStartup: ${FITTRACK_ADMIN_RESET_PASSWORD_ON_STARTUP:-false}
+      ModelConnector__DefaultPreset: ${FITTRACK_MODEL_PRESET:-mimo}
+      ModelConnector__ApiKey: ${FITTRACK_MODEL_API_KEY:-}
+      ModelConnector__Endpoint: ${FITTRACK_MODEL_ENDPOINT:-https://token-plan-cn.xiaomimimo.com/v1}
+      ModelConnector__ModelId: ${FITTRACK_MODEL_ID:-mimo-v2.5}
+      ModelConnector__OverwriteFromEnvironment: ${FITTRACK_MODEL_OVERWRITE_FROM_ENVIRONMENT:-false}
+      USDA__ApiKey: ${USDA_API_KEY:-}
+    volumes:
+      - fittrack-copilot-data:/data
+    networks:
+      - fittrack
+
+  fittrack-react:
+    image: ghcr.io/remixu1994/fittrack-react:main
+    container_name: fittrack-react
+    restart: unless-stopped
+    depends_on:
+      - fittrack-copilot
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      NEXT_PUBLIC_API_BASE_URL: http://${FITTRACK_PUBLIC_HOST:-192.168.31.13}:5097
+    networks:
+      - fittrack
+
+volumes:
+  fittrack-copilot-data:
+
+networks:
+  fittrack:
+    driver: bridge

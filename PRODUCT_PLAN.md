@@ -1,147 +1,400 @@
-# PRODUCT_PLAN.md
+# FitTrack Muscle Gain Agent Product Roadmap
 
 ## 1. Product Direction
 
-FitTrack 当前最有潜力的产品形态，不是“能聊天的健身助手”，而是“以 agent 驱动的每日健身执行系统”。
+FitTrack 当前最优先打磨的产品形态，是面向增肌训练者的“以 Agent 驱动的每日吃练执行系统”。
 
-目标不是让用户和 AI 多聊，而是让用户每天更快完成 4 个关键动作：
+它不是一个泛健身聊天助手，也不是只给建议的训练问答工具。它要把训练刺激、碳水分配、饮食记录、训练反馈和恢复复盘串成每天可执行的闭环。
 
-1. 确认今天该怎么吃
-2. 确认今天该怎么练
-3. 看到当前偏差和风险
-4. 明确下一步该执行什么
+核心目标是让用户每天更快完成 5 个动作：
+
+1. 确认今天属于什么训练日和碳循环日。
+2. 确认今天该练什么、练到什么强度。
+3. 确认今天该吃多少热量、蛋白、碳水和脂肪。
+4. 快速记录饮食与训练执行情况。
+5. 根据偏差、疲劳和完成度调整今天剩余动作与明天计划。
 
 主交付链路继续保持：
 
 `FitTrack.React -> FitTrack.Copilot API -> Agent orchestration`
 
-## 2. Product Problem
+本轮只规划产品 Roadmap，不进入完整技术架构设计。后续技术架构应从本文档导出数据模型、Agent 分工、页面入口、API 闭环和验收测试。
 
-当前主线已经有不错的聊天工作台，但仍有三个明显问题：
+## 2. Primary User
 
-1. 聊天太强，闭环太弱
-   用户可以得到建议，但很难把建议快速变成记录、计划和复盘。
+第一优先目标用户是有一定训练基础、希望系统增肌和持续进步的训练者。
 
-2. 结构化页面太薄
-   `food-records`、`workouts`、`progress` 目前更像数据展示页，不像执行工作台。
+典型特征：
 
-3. 信息架构仍偏“会话工具”
-   thread 对系统友好，但对普通用户不天然；健身场景更适合按“今天 / 本周 / 趋势”组织。
+1. 已经知道基础动作，但缺少稳定周期计划。
+2. 关注力量进步、肌肉维度、训练容量和恢复状态。
+3. 愿意记录训练和饮食，但不想每天手动重新计算计划。
+4. 需要知道高碳日、低碳日如何与训练安排匹配。
+5. 需要 Agent 帮助判断“今天该推进、维持、减量还是补救”。
 
-## 3. Product Principles
+MVP 不以泛健身新手、纯减脂用户或医疗健康用户为第一优先级。它们可以被兼容，但不主导功能排序。
 
-后续设计和实现遵循以下原则：
+## 3. Product Positioning
+
+产品主张：
+
+FitTrack Muscle Gain Agent 帮用户把“训练计划”和“饮食计划”合并为一个每日执行系统，让增肌不只依赖热情，而依赖可复盘、可调整、可持续的行动链路。
+
+核心闭环：
+
+1. 每周生成力量增肌混合训练计划。
+2. 每天根据训练日类型自动分配碳循环目标。
+3. 用户记录饮食与训练。
+4. Agent 计算计划执行偏差。
+5. Agent 给出当日纠偏和次日调整建议。
+
+关键差异化：
+
+1. 训练日驱动饮食，而不是饮食和训练各算各的。
+2. 强调渐进超负荷和恢复反馈，而不是一次性生成静态计划。
+3. 碳循环自动绑定训练负荷，减少用户决策成本。
+4. Chat 是执行引擎，Dashboard 是每日控制台，记录页是闭环证据。
+
+## 4. Product Principles
 
 1. Dashboard first, chat second
-   先看到今日状态和动作，再进入对话。
+   用户先看到今天的训练日、碳循环日、宏量目标、执行偏差和下一步动作，再进入对话。
 
-2. Actionable outputs over descriptive outputs
-   重要结果必须能执行、保存或复用，不能只停留在聊天气泡里。
+2. Training-driven nutrition
+   饮食计划默认由训练安排驱动。大重量或高容量训练日使用高碳，普通训练日使用中碳，休息或恢复日使用低碳。
 
-3. Day-based workflow over thread-based workflow
-   默认按“今天”组织，而不是让用户先理解 session/thread。
+3. Actionable outputs over descriptive outputs
+   Agent 输出必须能被保存、执行或复盘，不能只停留在聊天气泡里。
 
-4. Deviation management over generic coaching
-   重点展示偏差、剩余预算、补救动作，而不是泛泛建议。
+4. Progressive overload with feedback
+   训练计划必须能根据完成度、RPE、疲劳和动作表现调整，而不是每周重复同一模板。
 
-5. Trust before sophistication
-   比起更会聊天，更优先提升估算来源、置信度和可解释性。
+5. Deviation management over generic coaching
+   产品重点展示偏差、剩余预算、训练完成度、疲劳风险和补救动作，而不是泛泛建议。
 
-## 4. Phased Delivery
+6. Trust before sophistication
+   热量、宏量、训练强度和调整建议必须有来源、理由或置信度。估算值和用户确认值需要区分。
 
-### Phase 1: Make Daily Execution Real
+## 5. Six-Week MVP Roadmap
 
-目标：把现有 agent 从“建议生成器”推进到“每日执行工具”。
+### Week 1: Profile, Goal, Training Context, Baseline
 
-交付重点：
-
-1. Today Dashboard
-   汇总今日热量、蛋白、训练、最近记录和建议动作。
-
-2. Quick Actions
-   把常见任务做成结构化入口：
-   - 规划今天
-   - 分析这顿饭
-   - 记录训练
-   - 做晚间复盘
-
-3. Chat-to-action bridging
-   让 dashboard 和 chat 不再割裂，dashboard 的动作应能直接把用户带到对应任务上下文。
-
-4. Insight rail strengthening
-   让 `Daily Summary`、`Day Plan`、`Meal Analysis` 成为行动面板，而不是仅展示结果。
-
-### Phase 2: Build Closed Loops
-
-目标：把建议真正落到记录与复盘里。
+目标：让 Agent 拿到生成增肌计划所需的最小用户画像。
 
 交付重点：
 
-1. Meal analysis -> save food record
-2. Day plan -> save today plan
-3. Evening review -> structured daily review card
-4. Workout chat -> structured workout session logging
+1. 用户目标
+   - 目标类型：增肌、重组、维持。
+   - 目标体重或阶段目标。
+   - 期望周期和每周可训练天数。
 
-### Phase 3: Build Weekly Intelligence
+2. 训练条件
+   - 健身房或居家训练。
+   - 可用器械。
+   - 每次可训练时长。
+   - 训练经验水平。
+   - 当前主项水平或估算力量基线。
 
-目标：从单日工具升级为持续决策系统。
+3. 饮食条件
+   - 当前体重、身高、年龄、性别。
+   - 做饭条件、饮食偏好、过敏或禁忌。
+   - 是否接受碳循环。
+
+4. 基线输出
+   - 初始热量目标。
+   - 蛋白目标。
+   - 初始训练频率建议。
+   - 第一周计划生成前的风险提醒。
+
+验收标准：
+
+1. 用户可以在 5 分钟内完成建档。
+2. Agent 能基于资料生成“是否足够制定第一周计划”的判断。
+3. 缺失关键字段时，Agent 只追问必要信息。
+
+### Week 2: Weekly Strength-Hypertrophy Training Plan
+
+目标：生成可执行的一周力量增肌混合训练计划。
+
+训练逻辑默认采用“力量增肌混合”：
+
+1. 主项力量进步：深蹲、卧推、硬拉、划船、推举等核心动作按能力选择。
+2. 辅助增肌容量：按肌群补足有效训练组。
+3. 渐进超负荷：优先基于重量、次数、组数和 RPE 调整。
+4. 恢复约束：避免连续堆叠同肌群高压力训练。
 
 交付重点：
 
-1. Weekly adherence summary
-2. Trend-based adjustments
-3. Pattern detection
-4. Morning brief and event-triggered nudges
+1. 周训练结构
+   - 3 到 5 天训练模板。
+   - 每天训练主题，如 Upper、Lower、Push、Pull、Legs、Full Body。
+   - 每天预估训练时长。
 
-## 5. Workstreams
+2. 当日训练内容
+   - 动作列表。
+   - 组数、次数、RPE 或强度范围。
+   - 组间休息。
+   - 可替代动作。
+
+3. Dashboard 显示
+   - 今天训练主题。
+   - 今日主项。
+   - 今日目标容量。
+   - 预计训练时长。
+
+验收标准：
+
+1. 用户能看到完整一周训练安排。
+2. 用户能进入今天训练并知道每个动作怎么做。
+3. 计划输出能被保存为后续饮食和复盘的基础。
+
+### Week 3: Training-Day-Driven Carb Cycling
+
+目标：让碳循环自动跟随训练日类型，不要求用户每天手动排碳。
+
+默认规则：
+
+1. 高碳日：大重量主项日、高容量腿部日、全身高压力日。
+2. 中碳日：普通力量训练日、上肢训练日、轻中等容量日。
+3. 低碳日：休息日、恢复日、低强度有氧日。
+
+交付重点：
+
+1. 周碳循环计划
+   - 训练计划生成后自动映射高/中/低碳日。
+   - 保持周平均热量符合增肌目标。
+   - 蛋白保持稳定，主要调整碳水和脂肪。
+
+2. 当日宏量目标
+   - 热量。
+   - 蛋白。
+   - 碳水。
+   - 脂肪。
+   - 今日碳日类型和原因。
+
+3. Agent 解释
+   - 为什么今天是高碳/中碳/低碳。
+   - 今日碳水更适合放在哪些餐。
+   - 如果训练临时取消，饮食如何调整。
+
+验收标准：
+
+1. 用户打开 Today 页面即可看到今日碳日类型。
+2. 用户能理解今天碳水目标与训练安排的关系。
+3. 改变训练日后，Agent 能给出碳循环调整建议。
+
+### Week 4: Food Logging and Macro Budget Tracking
+
+目标：把饮食建议落到可记录、可追踪、可纠偏的当日预算里。
+
+交付重点：
+
+1. 饮食记录
+   - 支持文字记录食物。
+   - 支持餐次：早餐、午餐、晚餐、加餐、训练前、训练后。
+   - 每条记录包含热量、蛋白、碳水、脂肪。
+
+2. 当日预算
+   - 已摄入。
+   - 剩余预算。
+   - 蛋白完成度。
+   - 碳水完成度。
+   - 脂肪偏差。
+
+3. 下一餐纠偏
+   - 蛋白不足时推荐补足策略。
+   - 碳水超出时调整剩余餐次。
+   - 高碳训练日未吃够时提示训练表现风险。
+
+验收标准：
+
+1. 单次饮食记录目标耗时不超过 20 秒。
+2. 每次记录后 Today 页面能反映当日宏量变化。
+3. Agent 能基于剩余预算给出下一餐建议。
+
+### Week 5: Workout Logging, Completion, RPE, Fatigue Feedback
+
+目标：让训练计划从静态模板变成可反馈、可调整的执行系统。
+
+交付重点：
+
+1. 训练日志
+   - 记录完成的动作、组数、次数。
+   - 记录重量或时长。
+   - 支持跳过、替换、降重量。
+
+2. 反馈字段
+   - 主项完成度。
+   - 训练完成度。
+   - RPE 或主观难度。
+   - 疲劳、酸痛、精力。
+
+3. Agent 调整建议
+   - 完成度高且 RPE 合理时，建议下次小幅进阶。
+   - 完成度低或疲劳高时，建议维持、降量或替代动作。
+   - 训练未完成时，建议当天是否需要补练或直接进入恢复。
+
+验收标准：
+
+1. 用户能保存一次训练 session。
+2. Agent 能从训练日志中判断是否适合渐进超负荷。
+3. 次日计划能引用前一日训练反馈。
+
+### Week 6: Daily Review, Deviation Correction, Next-Day Adjustment
+
+目标：打通每日吃练闭环，让 Agent 能在每天结束时形成可执行调整。
+
+交付重点：
+
+1. 晚间复盘
+   - 今日训练是否完成。
+   - 今日蛋白是否达标。
+   - 今日热量是否接近目标。
+   - 今日碳水是否匹配训练日。
+   - 今日疲劳和恢复状态。
+
+2. 偏差诊断
+   - 热量过低影响增肌。
+   - 蛋白不足影响恢复。
+   - 高碳日碳水不足影响训练表现。
+   - 训练完成度低提示计划强度或恢复问题。
+
+3. 次日调整
+   - 明日训练强度建议。
+   - 明日碳日是否保持或调整。
+   - 明日饮食重点。
+   - 1 到 3 条明确行动。
+
+验收标准：
+
+1. 用户能完成一次每日复盘。
+2. Agent 输出结构化复盘卡片。
+3. 复盘结果能影响次日训练和饮食建议。
+4. 6 周 MVP 完成后，产品能形成“计划 -> 执行 -> 记录 -> 复盘 -> 调整”的每日闭环。
+
+## 6. Post-MVP Roadmap
+
+### Phase 2: Smarter Training and Nutrition Adaptation
+
+目标：从每日闭环升级为持续进步系统。
+
+交付重点：
+
+1. 训练周期化
+   - 4 到 8 周 mesocycle。
+   - 周容量递进。
+   - Deload 周建议。
+
+2. 平台期识别
+   - 主项停滞。
+   - 训练容量过高或过低。
+   - 体重增长过快或过慢。
+   - 恢复不足。
+
+3. 动作替代
+   - 按器械、伤痛、拥挤场景替换动作。
+   - 保持目标肌群和训练刺激一致。
+
+4. 饮食模板
+   - 高碳日模板。
+   - 低碳日模板。
+   - 训练前后餐模板。
+   - 外食场景模板。
+
+### Phase 3: Multimodal and Advanced Coaching
+
+目标：把 Agent 从计划工具升级为更完整的陪练系统。
+
+交付重点：
+
+1. 图片食物识别。
+2. 语音训练陪练。
+3. 可穿戴设备接入。
+4. 动作库和动作指导。
+5. 周报智能调整。
+6. 非诊断型健康风险提醒。
+
+## 7. Workstreams
 
 ### A. Frontend Experience
 
-1. 新增 Today Dashboard 页面
-2. 调整导航优先级，突出 Today / Coach
-3. 为 chat 增加从 dashboard 带入任务上下文的能力
-4. 强化卡片的动作属性和状态表达
+1. Today 页面突出训练日、碳日、宏量预算和下一步动作。
+2. Chat 作为计划、记录、复盘的执行入口。
+3. Food Records 页面从列表升级为当日宏量预算追踪。
+4. Workouts 页面从记录列表升级为训练计划和 session 执行台。
+5. Progress 页面增加增肌相关趋势：体重、训练完成度、主项进步、蛋白达标率。
 
 ### B. Agent Interaction Model
 
-1. 明确四类高频任务模板
-2. 让响应更稳定地产出结构化卡片
-3. 为 meal / day plan / review / workout 形成稳定输出协议
+1. 建档 Agent：收集目标、训练条件、饮食条件和限制。
+2. Training Agent：生成周计划、当日训练和进阶建议。
+3. Nutrition Agent：生成宏量目标、碳循环和下一餐纠偏。
+4. Review Agent：汇总每日偏差并生成次日调整。
+5. Supervisor Agent：协调训练、饮食、恢复之间的取舍。
 
-### C. Data and Persistence
+### C. Data and Persistence Inputs
 
-1. 把 meal analysis 结果可回写 food record
-2. 把 workout conversation 可回写 workout session
-3. 为每日计划和每日复盘准备持久化模型
+后续架构设计至少需要考虑以下概念，但本轮不实现：
 
-### D. Trust and Observability
+1. User profile baseline。
+2. Fitness goal。
+3. Weekly workout plan。
+4. Workout day and exercise prescription。
+5. Workout session and exercise logs。
+6. Carb cycle plan。
+7. Daily macro target。
+8. Food record。
+9. Daily review。
+10. Plan adjustment recommendation。
 
-1. 让关键建议提供来源和置信度
-2. 区分“估算值”和“用户确认值”
-3. 记录关键链路转化：
-   - 从 quick action 到 chat
-   - 从 chat 到 record
-   - 从 chat 到 saved plan
+### D. Trust and Safety
 
-## 6. Immediate Backlog
+1. 区分估算值、用户确认值和 Agent 建议值。
+2. 训练强度建议需要说明原因。
+3. 饮食目标需要避免极端热量盈余或赤字。
+4. 伤病、异常疲劳、饮食失调信号必须触发安全提醒。
+5. 所有关键调整应能追溯到记录、反馈或用户目标。
 
-本轮先做以下内容：
+## 8. Success Criteria
 
-1. 新增 `Today` 页面
-2. 导航接入 `Today`
-3. 增加 dashboard quick actions
-4. 支持从 quick action 跳转到带上下文的 `Chat`
+6 周 MVP 完成后，产品应满足以下判断标准：
 
-后续紧跟的两项：
+1. 用户能在 5 分钟内完成建档，并生成第一周增肌训练计划。
+2. 用户每天能看到训练日类型、碳循环日类型和宏量目标。
+3. 用户能记录饮食，并看到当日热量、蛋白、碳水和脂肪偏差。
+4. 用户能记录训练，并反馈完成度、RPE 和疲劳。
+5. Agent 能在晚间复盘中生成次日调整建议。
+6. 用户不需要理解 thread/session，也能按 Today 工作流完成一天的吃练闭环。
+7. 重要结果从聊天内容沉淀为稳定卡片、记录和计划。
 
-1. Meal analysis card 增加 “Save to food log” 动作
-2. Evening review card 标准化输出
+## 9. Acceptance Scenarios
 
-## 7. Success Criteria
+### Scenario 1: New muscle-gain user onboarding
 
-Phase 1 完成后，产品应满足以下判断标准：
+用户完成目标、训练条件、饮食条件和基线信息后，Agent 生成第一周训练计划和初始宏量目标。
 
-1. 新用户进入后，不需要先理解 thread，也能知道今天该做什么
-2. 用户能通过 dashboard 在 1 次点击内进入高频任务
-3. chat 不再是孤立入口，而是 dashboard 的执行引擎
-4. 重要结果开始从“聊天内容”转成“稳定卡片和动作”
+### Scenario 2: High-carb training day
+
+用户打开 Today 页面，看到今天是高碳日，因为今天安排了高容量腿部训练。页面显示今日热量和宏量目标，并给出训练前后餐建议。
+
+### Scenario 3: Meal logging correction
+
+用户记录午餐后，系统发现蛋白不足、脂肪偏高。Agent 给出晚餐补足蛋白并控制脂肪的建议。
+
+### Scenario 4: Workout feedback adjustment
+
+用户完成训练后记录主项 RPE 偏高且最后一组未完成。Agent 建议下次维持重量或减少一组辅助动作。
+
+### Scenario 5: Evening review
+
+用户晚上复盘，系统汇总训练完成度、宏量偏差和疲劳状态，生成明天训练强度与碳循环调整建议。
+
+## 10. Assumptions and Boundaries
+
+1. MVP 周期按 6 周规划。
+2. 训练逻辑采用力量增肌混合：主项力量进步 + 辅助动作容量。
+3. 碳循环默认由训练日自动驱动：高碳用于大重量或高容量训练日，低碳用于休息日。
+4. 本轮只更新产品 Roadmap 文档，不实施代码、不做数据库/API 设计。
+5. `FitTrack` legacy 主应用不承接新的产品主线。
+6. 新前端体验优先落在 `FitTrack.React`。
+7. 后端主线继续是 `FitTrack.Copilot` API + Agent orchestration。

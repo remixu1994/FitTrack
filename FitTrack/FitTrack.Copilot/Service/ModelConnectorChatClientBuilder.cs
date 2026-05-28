@@ -75,7 +75,7 @@ public sealed class ModelConnectorChatClientBuilder : IModelConnectorChatClientB
     {
         HttpMessageHandler httpHandler = new HttpClientHandler();
 
-        if (connector.ProviderPreset == TenantModelConnectorPresetCatalog.XiaomiMimo)
+        if (connector.ProviderPreset == TenantModelConnectorPresetCatalog.Mimo)
         {
             var handlerLogger = _serviceProvider.GetService<ILogger<MimoReasoningPreservingHandler>>();
             httpHandler = new MimoReasoningPreservingHandler(handlerLogger) { InnerHandler = httpHandler };

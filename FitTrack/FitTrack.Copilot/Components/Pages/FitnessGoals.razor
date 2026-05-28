@@ -1,0 +1,231 @@
+@page "/fitness-goals"
+@using FitTrack.Copilot.Service
+@using FitTrack.Copilot.Data
+@inject IFitnessService FitnessService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Fitness Goals</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="container mt-4">
+            <h1 class="text-center mb-4">Fitness Goals</h1>
+            
+            <div class="mb-4">
+                <button class="btn btn-primary" @onclick="OpenCreateModal">Create New Goal</button>
+            </div>
+            
+            <div class="row">
+                @foreach (var goal in fitnessGoals)
+                {
+                    <div class="col-md-4 mb-4">
+                        <div class="card @(goal.IsCompleted ? "border-success" : "")">
+                            <div class="card-header">
+                                <h3>@goal.GoalType</h3>
+                                @if (goal.IsCompleted)
+                                {
+                                    <span class="badge badge-success">Completed</span>
+                                }
+                            </div>
+                            <div class="card-body">
+                                <p>@goal.GoalDescription</p>
+                                @if (goal.TargetWeight.HasValue)
+                                {
+                                    <p><strong>Target Weight:</strong> @goal.TargetWeight.Value kg</p>
+                                }
+                                @if (goal.TargetBodyFat.HasValue)
+                                {
+                                    <p><strong>Target Body Fat:</strong> @goal.TargetBodyFat.Value%</p>
+                                }
+                                @if (goal.TargetDuration.HasValue)
+                                {
+                                    <p><strong>Target Duration:</strong> @goal.TargetDuration.Value days</p>
+                                }
+                                <p><strong>Start Date:</strong> @goal.StartDate.ToShortDateString()</p>
+                                @if (goal.EndDate.HasValue)
+                                {
+                                    <p><strong>End Date:</strong> @goal.EndDate.Value.ToShortDateString()</p>
+                                }
+                                <div class="mt-3">
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => EditGoal(goal)">Edit</button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteGoal(goal.Id)">Delete</button>
+                                    @if (!goal.IsCompleted)
+                                    {
+                                        <button class="btn btn-sm btn-outline-success" @onclick="() => MarkAsCompleted(goal.Id)">Mark Complete</button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            
+            @if (fitnessGoals.Count == 0)
+            {
+                <div class="text-center">
+                    <p>You don't have any fitness goals yet.</p>
+                    <button class="btn btn-primary" @onclick="OpenCreateModal">Create Your First Goal</button>
+                </div>
+            }
+        </div>
+        
+        <!-- Create/Edit Modal -->
+        <div class="modal @(isModalOpen ? "show" : "")" tabindex="-1" role="dialog" style="display: @(isModalOpen ? "block" : "none")">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@(isEditing ? "Edit Goal" : "Create New Goal")</h5>
+                        <button type="button" class="close" @onclick="CloseModal">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form @onsubmit="HandleSubmit">
+                            <div class="form-group">
+                                <label for="goalType">Goal Type</label>
+                                <input type="text" class="form-control" id="goalType" @bind="currentGoal.GoalType" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="goalDescription">Goal Description</label>
+                                <textarea class="form-control" id="goalDescription" @bind="currentGoal.GoalDescription" rows="3" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="targetWeight">Target Weight (kg)</label>
+                                <input type="number" class="form-control" id="targetWeight" @bind="currentGoal.TargetWeight" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label for="targetBodyFat">Target Body Fat (%)</label>
+                                <input type="number" class="form-control" id="targetBodyFat" @bind="currentGoal.TargetBodyFat" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label for="targetDuration">Target Duration (days)</label>
+                                <input type="number" class="form-control" id="targetDuration" @bind="currentGoal.TargetDuration">
+                            </div>
+                            <div class="form-group">
+                                <label for="startDate">Start Date</label>
+                                <input type="date" class="form-control" id="startDate" @bind="currentGoal.StartDate">
+                            </div>
+                            <div class="form-group">
+                                <label for="endDate">End Date</label>
+                                <input type="date" class="form-control" id="endDate" @bind="currentGoal.EndDate">
+                            </div>
+                            <div class="form-group">
+                                <label for="isCompleted">Completed</label>
+                                <input type="checkbox" class="form-check-input" id="isCompleted" @bind="currentGoal.IsCompleted">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Save</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (isModalOpen)
+        {
+            <div class="modal-backdrop show"></div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <div class="container mt-4 text-center">
+            <h1>You need to log in to view your fitness goals</h1>
+            <a href="/Account/Login" class="btn btn-primary">Log In</a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private List<FitnessGoal> fitnessGoals = new();
+    private FitnessGoal currentGoal = new();
+    private bool isModalOpen = false;
+    private bool isEditing = false;
+    private string? userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            userId = user.Identity.Name;
+            await LoadGoals();
+        }
+    }
+
+    private async Task LoadGoals()
+    {
+        if (userId != null)
+        {
+            fitnessGoals = await FitnessService.GetFitnessGoalsByUserIdAsync(userId);
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        currentGoal = new FitnessGoal
+        {
+            UserId = userId!, 
+            StartDate = DateTime.UtcNow
+        };
+        isEditing = false;
+        isModalOpen = true;
+    }
+
+    private void EditGoal(FitnessGoal goal)
+    {
+        currentGoal = new FitnessGoal
+        {
+            Id = goal.Id,
+            UserId = goal.UserId,
+            GoalType = goal.GoalType,
+            GoalDescription = goal.GoalDescription,
+            TargetWeight = goal.TargetWeight,
+            TargetBodyFat = goal.TargetBodyFat,
+            TargetDuration = goal.TargetDuration,
+            StartDate = goal.StartDate,
+            EndDate = goal.EndDate,
+            IsCompleted = goal.IsCompleted
+        };
+        isEditing = true;
+        isModalOpen = true;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (isEditing)
+        {
+            await FitnessService.UpdateFitnessGoalAsync(currentGoal);
+        }
+        else
+        {
+            await FitnessService.CreateFitnessGoalAsync(currentGoal);
+        }
+        CloseModal();
+        await LoadGoals();
+    }
+
+    private async Task DeleteGoal(int id)
+    {
+        await FitnessService.DeleteFitnessGoalAsync(id);
+        await LoadGoals();
+    }
+
+    private async Task MarkAsCompleted(int id)
+    {
+        var goal = await FitnessService.GetFitnessGoalAsync(id);
+        if (goal != null)
+        {
+            goal.IsCompleted = true;
+            goal.EndDate = DateTime.UtcNow;
+            await FitnessService.UpdateFitnessGoalAsync(goal);
+            await LoadGoals();
+        }
+    }
+
+    private void CloseModal()
+    {
+        isModalOpen = false;
+    }
+}

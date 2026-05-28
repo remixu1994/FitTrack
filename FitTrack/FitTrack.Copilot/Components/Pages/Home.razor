@@ -1,0 +1,226 @@
+@page "/"
+@using FitTrack.Copilot.Service
+@using FitTrack.Copilot.Data
+@inject IFitnessService FitnessService
+@inject IWorkoutSessionService WorkoutSessionService
+@inject IFoodRecordService FoodRecordService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>FitTrack Home</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="container mt-4">
+            <h1 class="text-center mb-4">FitTrack</h1>
+            
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Your Fitness Goals</h3>
+                        </div>
+                        <div class="card-body">
+                            @if (fitnessGoals != null && fitnessGoals.Count > 0)
+                            {
+                                <ul class="list-group">
+                                    @foreach (var goal in fitnessGoals.Take(3))
+                                    {
+                                        <li class="list-group-item">
+                                            <strong>@goal.GoalType</strong>
+                                            <p>@goal.GoalDescription</p>
+                                            <small>Started: @goal.StartDate.ToShortDateString()</small>
+                                        </li>
+                                    }
+                                </ul>
+                                <a href="/fitness-goals" class="btn btn-primary mt-2">View All</a>
+                            }
+                            else
+                            {
+                                <p>You don't have any fitness goals yet.</p>
+                                <a href="/fitness-goals" class="btn btn-primary">Create Goal</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Recent Workouts</h3>
+                        </div>
+                        <div class="card-body">
+                            @if (workoutSessions != null && workoutSessions.Count > 0)
+                            {
+                                <ul class="list-group">
+                                    @foreach (var session in workoutSessions.Take(3))
+                                    {
+                                        <li class="list-group-item">
+                                            <strong>@session.StartTime.ToShortDateString()</strong>
+                                            <p>Duration: @session.Duration minutes</p>
+                                            @if (session.CaloriesBurned.HasValue)
+                                            {
+                                                <p>Calories: @session.CaloriesBurned.Value</p>
+                                            }
+                                        </li>
+                                    }
+                                </ul>
+                                <a href="/workout-sessions" class="btn btn-primary mt-2">View All</a>
+                            }
+                            else
+                            {
+                                <p>You haven't logged any workouts yet.</p>
+                                <a href="/workout-sessions" class="btn btn-primary">Log Workout</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Today's Nutrition</h3>
+                        </div>
+                        <div class="card-body">
+                            @if (nutritionSummary != null)
+                            {
+                                <div class="nutrition-summary">
+                                    <p><strong>Calories:</strong> @nutritionSummary.TotalCalories</p>
+                                    <p><strong>Protein:</strong> @nutritionSummary.TotalProtein g</p>
+                                    <p><strong>Carbs:</strong> @nutritionSummary.TotalCarbs g</p>
+                                    <p><strong>Fat:</strong> @nutritionSummary.TotalFat g</p>
+                                    <p><small>@nutritionSummary.RecordCount items logged</small></p>
+                                </div>
+                                <a href="/food-records" class="btn btn-primary mt-2">View Details</a>
+                            }
+                            else
+                            {
+                                <p>You haven't logged any food today.</p>
+                                <a href="/food-records" class="btn btn-primary">Log Food</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Quick Actions</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-6 mb-2">
+                                    <a href="/food-vision" class="btn btn-outline-primary btn-block">
+                                        <i class="bi bi-camera"></i> Food Recognition
+                                    </a>
+                                </div>
+                                <div class="col-sm-6 mb-2">
+                                    <a href="/chat" class="btn btn-outline-primary btn-block">
+                                        <i class="bi bi-chat"></i> Fitness Chat
+                                    </a>
+                                </div>
+                                <div class="col-sm-6 mb-2">
+                                    <a href="/workout-plans" class="btn btn-outline-primary btn-block">
+                                        <i class="bi bi-list-check"></i> Workout Plans
+                                    </a>
+                                </div>
+                                <div class="col-sm-6 mb-2">
+                                    <a href="/food-records" class="btn btn-outline-primary btn-block">
+                                        <i class="bi bi-utensils"></i> Food Records
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>AI Features</h3>
+                        </div>
+                        <div class="card-body">
+                            <p>Use our AI-powered features to enhance your fitness journey:</p>
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <a href="/food-vision">Food Image Recognition</a>
+                                    <p class="text-muted">Upload images of food to get nutrition information</p>
+                                </li>
+                                <li class="list-group-item">
+                                    <a href="/chat">Fitness Chat Assistant</a>
+                                    <p class="text-muted">Get personalized fitness and nutrition advice</p>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="container mt-4 text-center">
+            <h1>Welcome to FitTrack</h1>
+            <p class="lead">Your personal fitness and nutrition assistant</p>
+            <div class="mt-4">
+                <a href="/Account/Register" class="btn btn-primary btn-lg">Sign Up</a>
+                <a href="/Account/Login" class="btn btn-outline-primary btn-lg ml-2">Log In</a>
+            </div>
+            <div class="mt-6">
+                <h3>Features</h3>
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4>AI Food Recognition</h4>
+                                <p>Upload images of food to get nutrition information</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4>Fitness Chat Assistant</h4>
+                                <p>Get personalized fitness and nutrition advice</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4>Workout Tracking</h4>
+                                <p>Log and track your workouts</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private List<FitnessGoal> fitnessGoals = new();
+    private List<WorkoutSession> workoutSessions = new();
+    private NutritionSummary? nutritionSummary;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var userId = user.Identity.Name;
+            
+            // Get fitness goals
+            fitnessGoals = await FitnessService.GetFitnessGoalsByUserIdAsync(userId);
+            
+            // Get recent workout sessions
+            workoutSessions = await WorkoutSessionService.GetWorkoutSessionsByUserIdAsync(userId);
+            
+            // Get today's nutrition summary
+            nutritionSummary = await FoodRecordService.GetNutritionSummaryByDateAsync(userId, DateTime.UtcNow);
+        }
+    }
+}

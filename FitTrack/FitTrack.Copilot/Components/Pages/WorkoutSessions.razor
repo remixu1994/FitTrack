@@ -1,0 +1,317 @@
+@page "/workout-sessions"
+@using FitTrack.Copilot.Service
+@using FitTrack.Copilot.Data
+@inject IWorkoutSessionService WorkoutSessionService
+@inject IFitnessService FitnessService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Workout Sessions</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="container mt-4">
+            <h1 class="text-center mb-4">Workout Sessions</h1>
+            
+            <div class="mb-4">
+                <button class="btn btn-primary" @onclick="OpenCreateModal">Log New Workout</button>
+            </div>
+            
+            <div class="row">
+                @foreach (var session in workoutSessions)
+                {
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>@session.StartTime.ToShortDateString()</h3>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Start Time:</strong> @session.StartTime.ToShortTimeString()</p>
+                                <p><strong>End Time:</strong> @session.EndTime.ToShortTimeString()</p>
+                                <p><strong>Duration:</strong> @session.Duration minutes</p>
+                                @if (session.CaloriesBurned.HasValue)
+                                {
+                                    <p><strong>Calories Burned:</strong> @session.CaloriesBurned.Value</p>
+                                }
+                                @if (!string.IsNullOrEmpty(session.Notes))
+                                {
+                                    <p><strong>Notes:</strong> @session.Notes</p>
+                                }
+                                @if (session.WorkoutPlan != null)
+                                {
+                                    <p><strong>Plan:</strong> @session.WorkoutPlan.PlanName</p>
+                                }
+                                <p><strong>Exercises:</strong> @session.ExerciseSessions.Count</p>
+                                <div class="mt-3">
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewSession(session)">View</button>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => EditSession(session)">Edit</button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteSession(session.Id)">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            
+            @if (workoutSessions.Count == 0)
+            {
+                <div class="text-center">
+                    <p>You haven't logged any workout sessions yet.</p>
+                    <button class="btn btn-primary" @onclick="OpenCreateModal">Log Your First Workout</button>
+                </div>
+            }
+        </div>
+        
+        <!-- Create/Edit Modal -->
+        <div class="modal @(isModalOpen ? "show" : "")" tabindex="-1" role="dialog" style="display: @(isModalOpen ? "block" : "none")">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@(isEditing ? "Edit Workout Session" : "Log New Workout")</h5>
+                        <button type="button" class="close" @onclick="CloseModal">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form @onsubmit="HandleSubmit">
+                            <div class="form-group">
+                                <label for="workoutPlanId">Workout Plan</label>
+                                <select class="form-control" id="workoutPlanId" @bind="currentSession.WorkoutPlanId">
+                                    <option value="">Select Plan</option>
+                                    @foreach (var plan in workoutPlans)
+                                    {
+                                        <option value="@plan.Id">@plan.PlanName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="startTime">Start Time</label>
+                                <input type="datetime-local" class="form-control" id="startTime" @bind="currentSession.StartTime">
+                            </div>
+                            <div class="form-group">
+                                <label for="endTime">End Time</label>
+                                <input type="datetime-local" class="form-control" id="endTime" @bind="currentSession.EndTime">
+                            </div>
+                            <div class="form-group">
+                                <label for="caloriesBurned">Calories Burned</label>
+                                <input type="number" class="form-control" id="caloriesBurned" @bind="currentSession.CaloriesBurned" step="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="notes">Notes</label>
+                                <textarea class="form-control" id="notes" @bind="currentSession.Notes" rows="3"></textarea>
+                            </div>
+                            
+                            <h4 class="mt-4">Exercises</h4>
+                            @foreach (var exercise in currentSession.ExerciseSessions)
+                            {
+                                <div class="row mb-2">
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control" @bind="exercise.ExerciseName" placeholder="Exercise Name">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="number" class="form-control" @bind="exercise.Sets" placeholder="Sets">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="number" class="form-control" @bind="exercise.Reps" placeholder="Reps">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="number" class="form-control" @bind="exercise.Duration" placeholder="Duration (min)">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-sm btn-danger" @onclick="() => RemoveExercise(exercise)">Remove</button>
+                                    </div>
+                                </div>
+                            }
+                            <button type="button" class="btn btn-sm btn-primary" @onclick="AddExercise">Add Exercise</button>
+                            
+                            <div class="modal-footer mt-4">
+                                <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Save</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (isModalOpen)
+        {
+            <div class="modal-backdrop show"></div>
+        }
+        
+        <!-- View Session Modal -->
+        <div class="modal @(isViewModalOpen ? "show" : "")" tabindex="-1" role="dialog" style="display: @(isViewModalOpen ? "block" : "none")">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Workout Session - @viewingSession?.StartTime.ToShortDateString()</h5>
+                        <button type="button" class="close" @onclick="CloseViewModal">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        @if (viewingSession != null)
+                        {
+                            <p><strong>Start Time:</strong> @viewingSession.StartTime.ToString()</p>
+                            <p><strong>End Time:</strong> @viewingSession.EndTime.ToString()</p>
+                            <p><strong>Duration:</strong> @viewingSession.Duration minutes</p>
+                            @if (viewingSession.CaloriesBurned.HasValue)
+                            {
+                                <p><strong>Calories Burned:</strong> @viewingSession.CaloriesBurned.Value</p>
+                            }
+                            @if (!string.IsNullOrEmpty(viewingSession.Notes))
+                            {
+                                <p><strong>Notes:</strong> @viewingSession.Notes</p>
+                            }
+                            @if (viewingSession.WorkoutPlan != null)
+                            {
+                                <p><strong>Plan:</strong> @viewingSession.WorkoutPlan.PlanName</p>
+                            }
+                            
+                            <h4 class="mt-4">Exercises</h4>
+                            <ul class="list-group">
+                                @foreach (var exercise in viewingSession.ExerciseSessions)
+                                {
+                                    <li class="list-group-item">
+                                        <strong>@exercise.ExerciseName</strong>
+                                        @if (exercise.Sets.HasValue)
+                                        {
+                                            <span class="ml-2">@exercise.Sets sets</span>
+                                        }
+                                        @if (exercise.Reps.HasValue)
+                                        {
+                                            <span class="ml-2">@exercise.Reps reps</span>
+                                        }
+                                        @if (exercise.Duration.HasValue)
+                                        {
+                                            <span class="ml-2">@exercise.Duration minutes</span>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseViewModal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (isViewModalOpen)
+        {
+            <div class="modal-backdrop show"></div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <div class="container mt-4 text-center">
+            <h1>You need to log in to view your workout sessions</h1>
+            <a href="/Account/Login" class="btn btn-primary">Log In</a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private List<WorkoutSession> workoutSessions = new();
+    private List<WorkoutPlan> workoutPlans = new();
+    private WorkoutSession currentSession = new();
+    private WorkoutSession? viewingSession;
+    private bool isModalOpen = false;
+    private bool isViewModalOpen = false;
+    private bool isEditing = false;
+    private string? userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            userId = user.Identity.Name;
+            await LoadSessions();
+            await LoadPlans();
+        }
+    }
+
+    private async Task LoadSessions()
+    {
+        if (userId != null)
+        {
+            workoutSessions = await WorkoutSessionService.GetWorkoutSessionsByUserIdAsync(userId);
+        }
+    }
+
+    private async Task LoadPlans()
+    {
+        if (userId != null)
+        {
+            workoutPlans = await FitnessService.GetWorkoutPlansByUserIdAsync(userId);
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        currentSession = new WorkoutSession
+        {
+            UserId = userId!, 
+            StartTime = DateTime.UtcNow,
+            EndTime = DateTime.UtcNow.AddHours(1)
+        };
+        isEditing = false;
+        isModalOpen = true;
+    }
+
+    private async Task EditSession(WorkoutSession session)
+    {
+        currentSession = await WorkoutSessionService.GetWorkoutSessionAsync(session.Id);
+        if (currentSession != null)
+        {
+            isEditing = true;
+            isModalOpen = true;
+        }
+    }
+
+    private async Task ViewSession(WorkoutSession session)
+    {
+        viewingSession = await WorkoutSessionService.GetWorkoutSessionAsync(session.Id);
+        isViewModalOpen = true;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (isEditing)
+        {
+            await WorkoutSessionService.UpdateWorkoutSessionAsync(currentSession);
+        }
+        else
+        {
+            await WorkoutSessionService.CreateWorkoutSessionAsync(currentSession);
+        }
+        CloseModal();
+        await LoadSessions();
+    }
+
+    private async Task DeleteSession(int id)
+    {
+        await WorkoutSessionService.DeleteWorkoutSessionAsync(id);
+        await LoadSessions();
+    }
+
+    private void AddExercise()
+    {
+        currentSession.ExerciseSessions.Add(new ExerciseSession());
+    }
+
+    private void RemoveExercise(ExerciseSession exercise)
+    {
+        currentSession.ExerciseSessions.Remove(exercise);
+    }
+
+    private void CloseModal()
+    {
+        isModalOpen = false;
+    }
+
+    private void CloseViewModal()
+    {
+        isViewModalOpen = false;
+    }
+}

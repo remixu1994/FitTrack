@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>aspnet-FitTrack.Copilot-5c8b4139-6e59-4cd6-a8f2-2ec6cb93160a</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Update="Data\app.db" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0" />
+        <PackageReference Include="Microsoft.Agents.AI.Workflows" Version="1.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Anthropic" Version="12.20.0" />
+        <PackageReference Include="Azure.AI.OpenAI" Version="2.9.0-beta.1" />
+        <PackageReference Include="Markdig" Version="0.41.3" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.AI" Version="10.5.1" />
+        <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.5.1" />
+        <PackageReference Include="OpenAI" Version="2.10.0" />
+        <PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.2" />
+        <PackageReference Include="MudBlazor" Version="8.13.0" />
+        <PackageReference Include="NLog.Extensions.Logging" Version="6.1.0" />
+        <PackageReference Include="NLog.Web.AspNetCore" Version="6.0.1" />
+        <PackageReference Include="PdfPig" Version="0.1.10" />
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.0.1" />
+        <PackageReference Include="System.Linq.Async" Version="6.0.3" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="AI/Plugins/SystemPrompt/*.md" />
+    </ItemGroup>
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="Components\Pages\Chat.razor.css">
+        <DependentUpon>Chat.razor</DependentUpon>
+      </Compile>
+    </ItemGroup>
+
+</Project>

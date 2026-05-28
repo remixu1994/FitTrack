@@ -15,20 +15,28 @@ export type DailySummaryCardContent = {
   actions?: string[]
 }
 
-export const DAILY_SUMMARY_FALLBACK: DailySummaryCardContent = {
-  readiness: { label: 'Readiness', value: '+11 %', intent: 'Shift extra carbs today' },
+const DAILY_SUMMARY_FALLBACK_EN: DailySummaryCardContent = {
+  readiness: { label: 'Readiness', value: '+11 %', intent: 'Adjust carbs in the next meal' },
   weight: { label: 'Weight', value: '68.4 kg', delta: '-0.2 kg vs avg' },
   sleep: { label: 'Sleep', value: '6 h 10 m', delta: '-45 m vs goal' },
-  callout: "Agent recommends a lighter fat dinner so tomorrow's low day stays stable.",
+  callout: "System suggests a lighter dinner to keep tomorrow's plan stable.",
+}
+
+const DAILY_SUMMARY_FALLBACK_ZH: DailySummaryCardContent = {
+  readiness: { label: '状态', value: '+11 %', intent: '下一餐适当调整碳水' },
+  weight: { label: '体重', value: '68.4 kg', delta: '较平均值 -0.2 kg' },
+  sleep: { label: '睡眠', value: '6 小时 10 分', delta: '较目标 -45 分' },
+  callout: '系统建议晚餐适当降低脂肪摄入，以保持明天计划稳定。',
 }
 
 export function DailySummaryCard({ content }: { content?: DailySummaryCardContent | null }) {
   const { language } = useLanguage()
   const isChinese = language === 'zh-CN'
-  const data = content ?? DAILY_SUMMARY_FALLBACK
+  const fallback = isChinese ? DAILY_SUMMARY_FALLBACK_ZH : DAILY_SUMMARY_FALLBACK_EN
+  const data = content ?? fallback
 
   const metrics = [data.readiness, data.weight, data.sleep].filter(Boolean) as SummaryMetric[]
-  const callout = data.callout ?? DAILY_SUMMARY_FALLBACK.callout
+  const callout = data.callout ?? fallback.callout
   const actions = data.actions ?? []
 
   return (

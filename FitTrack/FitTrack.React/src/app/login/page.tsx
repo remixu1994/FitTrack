@@ -19,11 +19,9 @@ export default function LoginPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.45em] text-cyan-300">FitTrack</p>
-            <h1 className="mt-3 text-3xl font-semibold">{isChinese ? '登录教练工作台' : 'Sign in to the coach'}</h1>
+            <h1 className="mt-3 text-3xl font-semibold">{isChinese ? '登录 FitTrack' : 'Sign in to FitTrack'}</h1>
             <p className="mt-2 text-sm text-slate-400">
-              {isChinese
-                ? '使用你的 ASP.NET Identity 账号登录。Access Token 保存在浏览器端，刷新依赖后端安全 Cookie。'
-                : 'Use your ASP.NET Identity account. Access tokens stay client-side; refresh uses the secure cookie from the backend.'}
+              {isChinese ? '使用你的账号进入计划、记录和进度页面。' : 'Use your account to access planning, records, and progress.'}
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 p-1">
@@ -51,7 +49,7 @@ export default function LoginPage() {
             setError(null)
             try {
               await login(email, password)
-              window.location.replace('/chat')
+              window.location.replace('/today')
             } catch (loginError) {
               setError(loginError instanceof Error ? loginError.message : isChinese ? '登录失败' : 'Login failed')
             } finally {

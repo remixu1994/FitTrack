@@ -1,0 +1,1636 @@
+{
+  "foods": [
+    {
+      "id": "碳水-5",
+      "macroType": "碳水",
+      "group": "米类主食",
+      "name": "生米",
+      "rate": "0.75",
+      "giOrPosition": "高",
+      "explanation": "大米、糙米、糯米、小米、紫米、黑米等不分品种碳水率近似，除了黑米外均是高GI",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 5
+        }
+      ]
+    },
+    {
+      "id": "碳水-6",
+      "macroType": "碳水",
+      "group": "米类主食",
+      "name": "米饭（很软）",
+      "rate": "0.25",
+      "giOrPosition": "高",
+      "explanation": "只有自己做饭才可能这么软，外食几乎不可能",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 6
+        }
+      ]
+    },
+    {
+      "id": "碳水-7",
+      "macroType": "碳水",
+      "group": "米类主食",
+      "name": "米饭（一般）",
+      "rate": "0.3",
+      "giOrPosition": "高",
+      "explanation": "外食的一般米饭，长方形的标准外卖盒一般100-120g碳水/盒",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 7
+        }
+      ]
+    },
+    {
+      "id": "碳水-8",
+      "macroType": "碳水",
+      "group": "米类主食",
+      "name": "米饭（偏硬）",
+      "rate": "0.35",
+      "giOrPosition": "高",
+      "explanation": "外食的一般米饭，长方形的标准外卖盒一般100-120g碳水/盒",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 8
+        }
+      ]
+    },
+    {
+      "id": "碳水-9",
+      "macroType": "碳水",
+      "group": "米类主食",
+      "name": "米粥（稀）",
+      "rate": "0.1",
+      "giOrPosition": "高",
+      "explanation": "粘稠度类似小米粥的稀饭",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 9
+        }
+      ]
+    },
+    {
+      "id": "碳水-10",
+      "macroType": "碳水",
+      "group": "米类主食",
+      "name": "米粥（一般）",
+      "rate": "0.13",
+      "giOrPosition": "高",
+      "explanation": "粘稠度比小米粥要稠的稀饭",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 10
+        }
+      ]
+    },
+    {
+      "id": "碳水-11",
+      "macroType": "碳水",
+      "group": "米类主食",
+      "name": "米线（熟）",
+      "rate": "0.33",
+      "giOrPosition": "高",
+      "explanation": "米线饱腹感很低，外食一般不低于100g碳水/份",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 11
+        }
+      ]
+    },
+    {
+      "id": "碳水-12",
+      "macroType": "碳水",
+      "group": "米类主食",
+      "name": "肠粉（熟）",
+      "rate": "0.2",
+      "giOrPosition": "高",
+      "explanation": "广东地方主食，一般50-70g碳水/份",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 12
+        }
+      ]
+    },
+    {
+      "id": "碳水-13",
+      "macroType": "碳水",
+      "group": "米类主食",
+      "name": "粽子",
+      "rate": "0.5",
+      "giOrPosition": "高",
+      "explanation": "可吃白粽、豆沙粽，不吃肉粽，饱腹感很低，一般40-60g碳水/个",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 13
+        }
+      ]
+    },
+    {
+      "id": "碳水-14",
+      "macroType": "碳水",
+      "group": "麦类主食",
+      "name": "切片面包",
+      "rate": "0.5",
+      "giOrPosition": "高",
+      "explanation": "普通切片面包的脂肪率低于8%（性质是碳水食物），花式面包脂肪率高于10%甚至15%（性质是轻度糖油混合物）",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 14
+        }
+      ]
+    },
+    {
+      "id": "碳水-15",
+      "macroType": "碳水",
+      "group": "麦类主食",
+      "name": "馒头/花卷/馍/馕",
+      "rate": "0.5",
+      "giOrPosition": "高",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 15
+        }
+      ]
+    },
+    {
+      "id": "碳水-16",
+      "macroType": "碳水",
+      "group": "麦类主食",
+      "name": "挂面（生）",
+      "rate": "0.75",
+      "giOrPosition": "中",
+      "explanation": "挂面是面条里少有的中等GI碳水，不建议用于练后餐",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 16
+        }
+      ]
+    },
+    {
+      "id": "碳水-17",
+      "macroType": "碳水",
+      "group": "麦类主食",
+      "name": "意面（生）",
+      "rate": "0.75",
+      "giOrPosition": "低",
+      "explanation": "意面是面条里少有的低GI碳水，不能用于练后餐",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 17
+        }
+      ]
+    },
+    {
+      "id": "碳水-18",
+      "macroType": "碳水",
+      "group": "麦类主食",
+      "name": "鲜面（生）",
+      "rate": "0.6",
+      "giOrPosition": "高",
+      "explanation": "鲜面，指现和现拉的未下锅的面条，含水量高于干面，因此碳水率稍低，外食一般不低于100g碳水/份",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 18
+        }
+      ]
+    },
+    {
+      "id": "碳水-19",
+      "macroType": "碳水",
+      "group": "麦类主食",
+      "name": "凉面（熟）",
+      "rate": "0.3",
+      "giOrPosition": "高",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 19
+        }
+      ]
+    },
+    {
+      "id": "碳水-20",
+      "macroType": "碳水",
+      "group": "麦类主食",
+      "name": "粗面（熟）",
+      "rate": "0.3",
+      "giOrPosition": "高",
+      "explanation": "粗面，指像凉面粗细的面条，吸水率比细面低一些，因此碳水率稍高一些，外食一般不低于100g碳水/份",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 20
+        }
+      ]
+    },
+    {
+      "id": "碳水-21",
+      "macroType": "碳水",
+      "group": "麦类主食",
+      "name": "意面（熟）",
+      "rate": "0.3",
+      "giOrPosition": "低",
+      "explanation": "意面是面条里少有的低GI碳水，不能用于练后餐",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 21
+        }
+      ]
+    },
+    {
+      "id": "碳水-22",
+      "macroType": "碳水",
+      "group": "麦类主食",
+      "name": "细面（熟）",
+      "rate": "0.23",
+      "giOrPosition": "高",
+      "explanation": "细面，指像挂面粗细的面条，吸水率比粗面高一些，因此碳水率稍低一些，外食一般不低于100g碳水/份",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 22
+        }
+      ]
+    },
+    {
+      "id": "碳水-23",
+      "macroType": "碳水",
+      "group": "麦类主食",
+      "name": "卷饼/烙饼/馕（熟）",
+      "rate": "0.5",
+      "giOrPosition": "高",
+      "explanation": "面粉糊烤熟成饼状主食，各地域称呼不同，饱腹感很低，外食一般不低于100g碳水/份",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 23
+        }
+      ]
+    },
+    {
+      "id": "碳水-24",
+      "macroType": "碳水",
+      "group": "其他主食",
+      "name": "红薯（生/蒸煮）",
+      "rate": "0.18",
+      "giOrPosition": "高",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 24
+        }
+      ]
+    },
+    {
+      "id": "碳水-25",
+      "macroType": "碳水",
+      "group": "其他主食",
+      "name": "红薯（烤）",
+      "rate": "0.23",
+      "giOrPosition": "高",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 25
+        }
+      ]
+    },
+    {
+      "id": "碳水-26",
+      "macroType": "碳水",
+      "group": "其他主食",
+      "name": "土豆（生/蒸煮）",
+      "rate": "0.18",
+      "giOrPosition": "中",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 26
+        }
+      ]
+    },
+    {
+      "id": "碳水-27",
+      "macroType": "碳水",
+      "group": "其他主食",
+      "name": "土豆（烤）",
+      "rate": "0.23",
+      "giOrPosition": "高",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 27
+        }
+      ]
+    },
+    {
+      "id": "碳水-28",
+      "macroType": "碳水",
+      "group": "其他主食",
+      "name": "红薯/土豆粉丝（生）",
+      "rate": "0.84",
+      "giOrPosition": "低",
+      "explanation": "晒干制成的粉丝是少有的低GI碳水，例如酸辣粉、红薯粉、土豆粉，但注意米粉米线等新鲜食品不属于此类",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 28
+        }
+      ]
+    },
+    {
+      "id": "碳水-29",
+      "macroType": "碳水",
+      "group": "其他主食",
+      "name": "甜玉米（生/蒸煮）",
+      "rate": "0.2",
+      "giOrPosition": "中",
+      "explanation": "甜玉米，指传统玉米，碳水率和GI比糯玉米低不少，不建议用于练后餐，电商关键词“笨玉米”、“老式玉米”",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 29
+        }
+      ]
+    },
+    {
+      "id": "碳水-30",
+      "macroType": "碳水",
+      "group": "其他主食",
+      "name": "糯玉米（生/蒸煮）",
+      "rate": "0.35",
+      "giOrPosition": "高",
+      "explanation": "糯玉米，口味软糯，香味很重，碳水率和GI比甜玉米高得多，电商关键词“糯玉米”",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 30
+        }
+      ]
+    },
+    {
+      "id": "碳水-31",
+      "macroType": "碳水",
+      "group": "其他主食",
+      "name": "贝贝南瓜",
+      "rate": "0.21",
+      "giOrPosition": "中",
+      "explanation": "注意贝贝南瓜和传统南瓜的碳水率差别极大",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 31
+        }
+      ]
+    },
+    {
+      "id": "碳水-32",
+      "macroType": "碳水",
+      "group": "其他主食",
+      "name": "传统南瓜",
+      "rate": "0.05",
+      "giOrPosition": "中",
+      "explanation": "注意贝贝南瓜和传统南瓜的碳水率差别极大",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 32
+        }
+      ]
+    },
+    {
+      "id": "碳水-33",
+      "macroType": "碳水",
+      "group": "其他主食",
+      "name": "山药（生/蒸煮）",
+      "rate": "0.12",
+      "giOrPosition": "中",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 33
+        }
+      ]
+    },
+    {
+      "id": "碳水-34",
+      "macroType": "碳水",
+      "group": "其他主食",
+      "name": "藕粉（生）",
+      "rate": "0.9",
+      "giOrPosition": "低",
+      "explanation": "少有的低GI碳水，不要用于练后碳水，必须用开水冲调，冷却费时",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 34
+        }
+      ]
+    },
+    {
+      "id": "碳水-35",
+      "macroType": "碳水",
+      "group": "其他主食",
+      "name": "燕麦麸皮（生）",
+      "rate": "0.45",
+      "giOrPosition": "低",
+      "explanation": "少有的低GI碳水，不要用于练后碳水；饱腹感极强；极高膳食纤维",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 35
+        }
+      ]
+    },
+    {
+      "id": "碳水-36",
+      "macroType": "碳水",
+      "group": "其他主食",
+      "name": "速食燕麦片（生）",
+      "rate": "0.6",
+      "giOrPosition": "高",
+      "explanation": "饱腹感极强，一般不用于练后碳水以免太撑；极高膳食纤维",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 36
+        }
+      ]
+    },
+    {
+      "id": "碳水-37",
+      "macroType": "碳水",
+      "group": "其他主食",
+      "name": "速食黑麦片（生）",
+      "rate": "0.6",
+      "giOrPosition": "高",
+      "explanation": "饱腹感极强，一般不用于练后碳水以免太撑；脂肪率比燕麦片低不少，是很纯净的碳水；极高膳食纤维",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 37
+        }
+      ]
+    },
+    {
+      "id": "碳水-38",
+      "macroType": "碳水",
+      "group": "方便食品",
+      "name": "五谷道场方便面",
+      "rate": "0.65",
+      "giOrPosition": "中",
+      "explanation": "碳水约50g/袋或盒，虽然料包有油，但面饼非油炸，所以是碳水食物；高钠，建议粉包减半",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 38
+        }
+      ]
+    },
+    {
+      "id": "碳水-39",
+      "macroType": "碳水",
+      "group": "方便食品",
+      "name": "辛拉面（普通版）",
+      "rate": "0.65",
+      "giOrPosition": "中",
+      "explanation": "碳水约50g/袋或盒，虽然面饼油炸，但调料包无油，所以接近于碳水食物；高钠，建议粉包减半",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 39
+        }
+      ]
+    },
+    {
+      "id": "碳水-40",
+      "macroType": "碳水",
+      "group": "方便食品",
+      "name": "辛拉面（空空面版）",
+      "rate": "0.65",
+      "giOrPosition": "中",
+      "explanation": "碳水约50g/袋或盒，调料包无油，面饼非油炸，所以是彻底的碳水食物；高钠，建议粉包减半",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 40
+        }
+      ]
+    },
+    {
+      "id": "碳水-41",
+      "macroType": "碳水",
+      "group": "方便食品",
+      "name": "康力快熟意大利面",
+      "rate": "0.32",
+      "giOrPosition": "低",
+      "explanation": "碳水约60g/袋，需另购意大利面酱料，注意意面是少有的低GI碳水，不要用于练后碳水",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 41
+        }
+      ]
+    },
+    {
+      "id": "碳水-42",
+      "macroType": "碳水",
+      "group": "方便食品",
+      "name": "白家陈记酸辣粉丝",
+      "rate": "0.6",
+      "giOrPosition": "低",
+      "explanation": "碳水约40g/袋 60g/盒，料包只有几克油，所以是碳水食物；低GI，不用于练后碳水；高钠，建议粉包减半",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 42
+        }
+      ]
+    },
+    {
+      "id": "碳水-43",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "切片面包、碱水面包",
+      "rate": "0.5",
+      "giOrPosition": "高",
+      "explanation": "常规切片面包的脂肪率低于8%（碳水食物），花式面包脂肪率高于15%（轻度的糖油混合物）",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 43
+        }
+      ]
+    },
+    {
+      "id": "碳水-44",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "旺仔小馒头（46g装）",
+      "rate": "0.88",
+      "giOrPosition": "高",
+      "explanation": "碳水37g/袋，便于配餐，但约有1/4是蔗糖，不宜经常作为练后餐（可能导致果糖摄入超标）",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 44
+        }
+      ]
+    },
+    {
+      "id": "碳水-45",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "旺仔QQ糖",
+      "rate": "0.72",
+      "giOrPosition": "高",
+      "explanation": "小包装是20g装，碳水15g/袋；大包装是70g装，碳水50g/袋",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 45
+        }
+      ]
+    },
+    {
+      "id": "碳水-46",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "南方黑芝麻糊（无蔗糖版）",
+      "rate": "0.7",
+      "giOrPosition": "高",
+      "explanation": "碳水35g/袋，脂肪很低，实际上是碳水食物；推荐无蔗糖版，甜味剂是葡萄糖，不产生果糖；已熟化，温水冲泡即可",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 46
+        }
+      ]
+    },
+    {
+      "id": "碳水-47",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "南方高山玉米糊（无蔗糖版）",
+      "rate": "0.7",
+      "giOrPosition": "高",
+      "explanation": "碳水35g/袋，脂肪很低，实际上是碳水食物；推荐无蔗糖版，甜味剂是葡萄糖，不产生果糖；已熟化，温水冲泡即可",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 47
+        }
+      ]
+    },
+    {
+      "id": "碳水-48",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "营养米粉",
+      "rate": "0.75",
+      "giOrPosition": "高",
+      "explanation": "搜索“营养米粉”、“营养米糊”，以区别昂贵的婴儿米粉；已熟化，温水冲泡即可",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 48
+        }
+      ]
+    },
+    {
+      "id": "碳水-49",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "十月稻田饭团",
+      "rate": "0.25",
+      "giOrPosition": "中",
+      "explanation": "搜索“十月稻田糙米饭团”，碳水25g/袋，开袋即食",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 49
+        }
+      ]
+    },
+    {
+      "id": "碳水-50",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "红螺牌驴打滚",
+      "rate": "0.86",
+      "giOrPosition": "高",
+      "explanation": "搜索“红螺驴打滚”，碳水10g/小袋，此品牌甜味剂是用的麦芽糖而非蔗糖/果葡糖浆，不会产生果糖超标问题",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 50
+        }
+      ]
+    },
+    {
+      "id": "碳水-51",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "山西烤馍",
+      "rate": "0.7",
+      "giOrPosition": "高",
+      "explanation": "搜索“山西纯碱烤馍”，大袋装但保质期很长，口味类似葱香饼干",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 51
+        }
+      ]
+    },
+    {
+      "id": "碳水-52",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "非油炸干脆面",
+      "rate": "0.75",
+      "giOrPosition": "中",
+      "explanation": "搜索“豫派非油炸干脆面”，碳水27g/袋，口味类似小浣熊等油炸干脆面",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 52
+        }
+      ]
+    },
+    {
+      "id": "碳水-53",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "非油炸锅巴",
+      "rate": "0.65",
+      "giOrPosition": "中",
+      "explanation": "搜索“萃乐麦锅巴”，碳水65g/袋，口味类似一般的油炸锅巴",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 53
+        }
+      ]
+    },
+    {
+      "id": "碳水-54",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "BHB熟板栗",
+      "rate": "0.35",
+      "giOrPosition": "中",
+      "explanation": "搜索“BHB板栗”，碳水35g/袋",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 54
+        }
+      ]
+    },
+    {
+      "id": "碳水-55",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "沈大成豆沙青团",
+      "rate": "0.65",
+      "giOrPosition": "高",
+      "explanation": "搜索“沈大成豆沙青团”，碳水45g/个，注意只能是豆沙味的，其他口味脂肪太高",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 55
+        }
+      ]
+    },
+    {
+      "id": "碳水-56",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "云片糕/桃片",
+      "rate": "0.8",
+      "giOrPosition": "高",
+      "explanation": "一般是小袋装，自己看包装重量，蔗糖率约10%，不致于导致果糖摄入超标",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 56
+        }
+      ]
+    },
+    {
+      "id": "碳水-57",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "米花糖",
+      "rate": "0.85",
+      "giOrPosition": "高",
+      "explanation": "一般都小袋装，自己看包装重量，蔗糖率约10%，不致于导致果糖摄入超标",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 57
+        }
+      ]
+    },
+    {
+      "id": "碳水-58",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "娃哈哈八宝粥（木糖醇版）",
+      "rate": "0.13",
+      "giOrPosition": "高",
+      "explanation": "搜索“娃哈哈八宝粥”，碳水47g/罐；推荐木糖醇版，不产生果糖",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 58
+        }
+      ]
+    },
+    {
+      "id": "碳水-59",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "宝矿力运动饮料",
+      "rate": "0.06",
+      "giOrPosition": "中",
+      "explanation": "30g蔗糖/瓶，不能作为练后全部碳水，升血糖和胰岛素能力较弱，且可能导致果糖摄入超标",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 59
+        }
+      ]
+    },
+    {
+      "id": "碳水-60",
+      "macroType": "碳水",
+      "group": "便携碳水",
+      "name": "脉动运动饮料",
+      "rate": "0.05",
+      "giOrPosition": "中",
+      "explanation": "30g蔗糖/瓶，不能作为练后全部碳水，升血糖和胰岛素能力较弱，且可能导致果糖摄入超标",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 60
+        }
+      ]
+    },
+    {
+      "id": "碳水-61",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "干枣",
+      "rate": "0.5",
+      "giOrPosition": "中",
+      "explanation": "【水果的碳水构成】\n\n水果的碳水绝大部分是果糖+葡萄糖+蔗糖构成。蔗糖继续分解为一半果糖和一半葡萄糖。因此水果的碳水实质是果糖+葡萄糖的混合物，可以简单记忆成两者各半（不同水果比例有所差别）。\n\n\n【碳水率（含糖率）并不直接决定吃糖量】\n\n网上常见说法是说：放心吃“低糖水果”，不要吃“高糖水果”。这是不可靠的。因为我们吃水果时，不可能各种水果是按等重量来吃的，所以“含糖率”数据的实践意义不大。\n\n例如：西瓜是低糖水果（7%），但普通人一次很容易吃1kg以上瓜瓤，吃糖量超过70g是很厉害的；反之，香蕉是高糖水果（22%），但普通人吃香蕉一般只吃一根，只有20-30g糖，比吃西瓜要温和得多。因此，爱吃水果的朋友可以自己计算一下你一次到底会吃多少（买水果时标签会有重量，很好计算），切勿觉得“低糖水果”可以放心吃，“高糖水果”就不能吃。\n\n\n【水果不能作为主要碳水来源】\n\na.水果的碳水里大约有一半是果糖，如果把水果替代淀粉类主食作为主要碳水来源，显然很容易超过果糖的日摄入限量30-50g（长期过量摄入果糖会增加脂肪肝、肥胖症、胰岛素抵抗、痛风等代谢疾病的风险）；\n\nb.水果作为糖水，饱腹感很低，比吃米饭馒头等常规淀粉类主食更容易饥饿，减脂期水果吃得越多越饿；\n\nc.力训的练后餐也不能用水果作为主要碳水来源，等碳水量的水果和米饭馒头等常规淀粉类主食相比，因为水果大约一半碳水是果糖（果糖不刺激胰岛素分泌），所以尽管花费了大量碳水，但胰岛素水平却较低，不利于合成代谢。\n\n\n【水果不是高GI碳水 对血糖胰岛素刺激较弱】\n\na.食物的GI测试是摄入含有50g碳水的食物，记录在2小时内血糖升高的面积与同种方法下摄入50g葡萄糖导致血糖升高面积的比值。在GI测试里，取用50g碳水的水果，实际能分解葡萄糖的碳水大约只有一半，所以测得的GI值较低。而淀粉类主食，取用50g碳水的主食，会全部分解为葡萄糖，所以测得的GI值较高。水果GI较低的根本原因，是因为水果的碳水不会全部分解为葡萄糖，而不是因为水果的碳水分解为葡萄糖的速度较慢。\n\nb.水果里只有西瓜、哈密瓜的GI勉强达到高GI（说明其分解为果糖的比例较低），其他水果都是中低GI碳水。因此力训练后餐确实可以吃水果作为一部分碳水来源，但不能作为主要或全部碳水来源，例如练后100g碳水用4根香蕉来提供是错误的，这样虽然花费了巨大的碳水配额，但胰岛素却较低，且果糖摄入会超标。",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 61
+        }
+      ]
+    },
+    {
+      "id": "碳水-62",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "鲜枣",
+      "rate": "0.3",
+      "giOrPosition": "中",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 62
+        }
+      ]
+    },
+    {
+      "id": "碳水-63",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "椰肉",
+      "rate": "0.3",
+      "giOrPosition": "中",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 63
+        }
+      ]
+    },
+    {
+      "id": "碳水-64",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "榴莲",
+      "rate": "0.28",
+      "giOrPosition": "中",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 64
+        }
+      ]
+    },
+    {
+      "id": "碳水-65",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "菠萝蜜",
+      "rate": "0.26",
+      "giOrPosition": "中",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 65
+        }
+      ]
+    },
+    {
+      "id": "碳水-66",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "香蕉",
+      "rate": "0.22",
+      "giOrPosition": "中",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 66
+        }
+      ]
+    },
+    {
+      "id": "碳水-67",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "提子",
+      "rate": "0.17",
+      "giOrPosition": "中",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 67
+        }
+      ]
+    },
+    {
+      "id": "碳水-68",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "荔枝",
+      "rate": "0.17",
+      "giOrPosition": "中",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 68
+        }
+      ]
+    },
+    {
+      "id": "碳水-69",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "桂圆",
+      "rate": "0.17",
+      "giOrPosition": "中",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 69
+        }
+      ]
+    },
+    {
+      "id": "碳水-70",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "猕猴桃",
+      "rate": "0.15",
+      "giOrPosition": "中",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 70
+        }
+      ]
+    },
+    {
+      "id": "碳水-71",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "苹果",
+      "rate": "0.13",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 71
+        }
+      ]
+    },
+    {
+      "id": "碳水-72",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "梨",
+      "rate": "0.13",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 72
+        }
+      ]
+    },
+    {
+      "id": "碳水-73",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "车厘子",
+      "rate": "0.13",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 73
+        }
+      ]
+    },
+    {
+      "id": "碳水-74",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "火龙果",
+      "rate": "0.13",
+      "giOrPosition": "中",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 74
+        }
+      ]
+    },
+    {
+      "id": "碳水-75",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "芒果",
+      "rate": "0.13",
+      "giOrPosition": "中",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 75
+        }
+      ]
+    },
+    {
+      "id": "碳水-76",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "桑葚",
+      "rate": "0.13",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 76
+        }
+      ]
+    },
+    {
+      "id": "碳水-77",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "葡萄",
+      "rate": "0.12",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 77
+        }
+      ]
+    },
+    {
+      "id": "碳水-78",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "橘子",
+      "rate": "0.12",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 78
+        }
+      ]
+    },
+    {
+      "id": "碳水-79",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "橙子",
+      "rate": "0.11",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 79
+        }
+      ]
+    },
+    {
+      "id": "碳水-80",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "桃",
+      "rate": "0.1",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 80
+        }
+      ]
+    },
+    {
+      "id": "碳水-81",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "柚子",
+      "rate": "0.1",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 81
+        }
+      ]
+    },
+    {
+      "id": "碳水-82",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "樱桃",
+      "rate": "0.1",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 82
+        }
+      ]
+    },
+    {
+      "id": "碳水-83",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "西梅",
+      "rate": "0.1",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 83
+        }
+      ]
+    },
+    {
+      "id": "碳水-84",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "枇杷",
+      "rate": "0.09",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 84
+        }
+      ]
+    },
+    {
+      "id": "碳水-85",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "李子",
+      "rate": "0.09",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 85
+        }
+      ]
+    },
+    {
+      "id": "碳水-86",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "杏",
+      "rate": "0.09",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 86
+        }
+      ]
+    },
+    {
+      "id": "碳水-87",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "哈密瓜",
+      "rate": "0.08",
+      "giOrPosition": "高",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 87
+        }
+      ]
+    },
+    {
+      "id": "碳水-88",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "西瓜",
+      "rate": "0.07",
+      "giOrPosition": "高",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 88
+        }
+      ]
+    },
+    {
+      "id": "碳水-89",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "木瓜",
+      "rate": "0.07",
+      "giOrPosition": "中",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 89
+        }
+      ]
+    },
+    {
+      "id": "碳水-90",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "圣女果（小番茄）",
+      "rate": "0.06",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 90
+        }
+      ]
+    },
+    {
+      "id": "碳水-91",
+      "macroType": "碳水",
+      "group": "水果",
+      "name": "西红柿（大番茄）",
+      "rate": "0.03",
+      "giOrPosition": "低",
+      "explanation": "",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 91
+        }
+      ]
+    },
+    {
+      "id": "蛋白质-96",
+      "macroType": "蛋白质",
+      "group": "干净蛋白质",
+      "name": "瘦肉（鱼虾生肉）",
+      "rate": "0.15",
+      "giOrPosition": "主要来源",
+      "explanation": "一般鱼虾的含水率高于家禽家畜，因此蛋白质率稍低",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 96
+        }
+      ]
+    },
+    {
+      "id": "蛋白质-97",
+      "macroType": "蛋白质",
+      "group": "干净蛋白质",
+      "name": "瘦肉（三文鱼/金枪鱼）",
+      "rate": "0.2",
+      "giOrPosition": "",
+      "explanation": "三文鱼/金枪鱼本身脂肪率较高，并非瘦肉；但如果是吃中腩或赤身，且是无油生食，姑且也可视为瘦肉",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 97
+        }
+      ]
+    },
+    {
+      "id": "蛋白质-98",
+      "macroType": "蛋白质",
+      "group": "干净蛋白质",
+      "name": "瘦肉（家禽家畜生肉）",
+      "rate": "0.2",
+      "giOrPosition": "",
+      "explanation": "鸡鸭肉要去皮，猪牛羊肉要没有白色脂肪层，才是瘦肉性质",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 98
+        }
+      ]
+    },
+    {
+      "id": "蛋白质-99",
+      "macroType": "蛋白质",
+      "group": "干净蛋白质",
+      "name": "瘦肉（一般的熟肉）",
+      "rate": "0.25",
+      "giOrPosition": "",
+      "explanation": "鱼虾和家禽家畜瘦肉均属之，不用区分品种（鱼虾因为含水率更高，熟后脱水率更高，蛋白质率会显著上升）",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 99
+        }
+      ]
+    },
+    {
+      "id": "蛋白质-100",
+      "macroType": "蛋白质",
+      "group": "干净蛋白质",
+      "name": "瘦肉（柴感的熟肉）",
+      "rate": "0.3",
+      "giOrPosition": "",
+      "explanation": "酱牛肉、干柴的卤肉等，因为脱水率更高，蛋白质率会更高一些",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 100
+        }
+      ]
+    },
+    {
+      "id": "蛋白质-101",
+      "macroType": "蛋白质",
+      "group": "干净蛋白质",
+      "name": "瘦肉干",
+      "rate": "0.4",
+      "giOrPosition": "",
+      "explanation": "牛肉干、鸡肉干，因为脱水率很高，蛋白质率就很高，注意碳水率（糖率）最好低于10%，否则就成了“糖肉干”",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 101
+        }
+      ]
+    },
+    {
+      "id": "蛋白质-102",
+      "macroType": "蛋白质",
+      "group": "干净蛋白质",
+      "name": "蛋白粉",
+      "rate": "0.75",
+      "giOrPosition": "",
+      "explanation": "乳清蛋白粉的一般70-80%，分离乳清蛋白粉一般80-90%，素食者可用大豆分离蛋白粉（氨基酸比例良好）",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 102
+        }
+      ]
+    },
+    {
+      "id": "蛋白质-108",
+      "macroType": "蛋白质",
+      "group": "含有蛋白质的混合物",
+      "name": "鸡蛋",
+      "rate": "6g/个",
+      "giOrPosition": "早饭来源",
+      "explanation": "蛋清（蛋白质3g 脂肪0g）+蛋黄（蛋白质3g 脂肪5g）=全蛋（蛋白质6g 脂肪5g）",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 108
+        }
+      ]
+    },
+    {
+      "id": "蛋白质-109",
+      "macroType": "蛋白质",
+      "group": "含有蛋白质的混合物",
+      "name": "牛奶",
+      "rate": "10g/250ml盒",
+      "giOrPosition": "",
+      "explanation": "250ml盒装纯牛奶（碳水12g 蛋白质10g 脂肪9g），可以简单记忆为碳蛋脂都是10g",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 109
+        }
+      ]
+    },
+    {
+      "id": "蛋白质-110",
+      "macroType": "蛋白质",
+      "group": "含有蛋白质的混合物",
+      "name": "酸奶",
+      "rate": "10g/200ml盒",
+      "giOrPosition": "",
+      "explanation": "代糖酸奶可简单等同于纯牛奶，特殊酸奶（含糖酸奶会多10g+糖，希腊酸奶近乎零脂）可参照营养表来计算",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 110
+        }
+      ]
+    },
+    {
+      "id": "蛋白质-111",
+      "macroType": "蛋白质",
+      "group": "含有蛋白质的混合物",
+      "name": "干黄豆",
+      "rate": "0.35",
+      "giOrPosition": "碰到了可吃",
+      "explanation": "碳水34% 蛋白质35% 脂肪16%，碰到了可以吃一些，但不能替代瘦肉，因为氨基酸比例较差，且附带过多脂肪",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 111
+        }
+      ]
+    },
+    {
+      "id": "蛋白质-112",
+      "macroType": "蛋白质",
+      "group": "含有蛋白质的混合物",
+      "name": "鲜黄豆/毛豆/青豆",
+      "rate": "0.13",
+      "giOrPosition": "",
+      "explanation": "碳水11% 蛋白质13% 脂肪5%，碰到了可以吃一些，但不能替代瘦肉，因为氨基酸比例较差，且附带过多脂肪",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 112
+        }
+      ]
+    },
+    {
+      "id": "蛋白质-113",
+      "macroType": "蛋白质",
+      "group": "含有蛋白质的混合物",
+      "name": "豆皮/千张",
+      "rate": "0.35",
+      "giOrPosition": "",
+      "explanation": "碳水20% 蛋白质35% 脂肪20%，碰到了可以吃一些，但不能替代瘦肉，因为氨基酸比例较差，且附带过多脂肪",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 113
+        }
+      ]
+    },
+    {
+      "id": "蛋白质-114",
+      "macroType": "蛋白质",
+      "group": "含有蛋白质的混合物",
+      "name": "豆腐",
+      "rate": "0.07",
+      "giOrPosition": "",
+      "explanation": "碳水3% 蛋白质7% 脂肪5%，碰到了可以吃一些，但不能替代瘦肉，因为氨基酸比例较差，且附带过多脂肪",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 114
+        }
+      ]
+    },
+    {
+      "id": "蛋白质-115",
+      "macroType": "蛋白质",
+      "group": "含有蛋白质的混合物",
+      "name": "豆浆",
+      "rate": "0.03",
+      "giOrPosition": "可忽略不计",
+      "explanation": "碳水1% 蛋白质3% 脂肪2%，主要是水，热量很低可忽略不计，但肯麦的高甜豆浆约放了20g糖，其实是一杯糖水",
+      "sourceRefs": [
+        {
+          "sheetIndex": 20,
+          "sheetTitle": "19日常食物营养率",
+          "row": 115
+        }
+      ]
+    }
+  ]
+}

@@ -29,6 +29,14 @@ const baseNavItems: ReadonlyArray<NavItem> = [
     ],
   },
   { href: '/food-records', label: { en: 'Food', zh: '饮食' } },
+  {
+    href: '/nutrition',
+    label: { en: 'Nutrition', zh: '\u8425\u517b' },
+    children: [
+      { href: '/nutrition/fat-loss', label: { en: 'Fat Loss', zh: '\u51cf\u8102' } },
+      { href: '/nutrition/muscle-gain', label: { en: 'Muscle Gain', zh: '\u589e\u808c' } },
+    ],
+  },
   { href: '/workouts', label: { en: 'Workouts', zh: '训练' } },
   { href: '/progress', label: { en: 'Progress', zh: '进度' } },
   { href: '/settings/profile', label: { en: 'Profile', zh: '档案' } },
